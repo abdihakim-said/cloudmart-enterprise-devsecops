@@ -1,0 +1,102 @@
+# CloudMart Custom Falco Rules for Runtime Security
+
+- rule: CloudMart Suspicious Network Activity
+  desc: Detect suspicious network connections from CloudMart containers
+  condition: >
+    (container.image.repository contains "cloudmart") and
+    (fd.type=ipv4 or fd.type=ipv6) and
+    (fd.ip != "0.0.0.0" and fd.net != "127.0.0.0/8" and fd.net != "10.0.0.0/8") and
+    not proc.name in (node, npm, curl, wget)
+  output: >
+    Suspicious network activity in CloudMart container
+    (user=%user.name command=%proc.cmdline container_id=%container.id 
+    container_name=%container.name image=%container.image.repository:%container.image.tag 
+    connection=%fd.name)
+  priority: WARNING
+  tags: [network, cloudmart]
+
+- rule: CloudMart Unauthorized File Access
+  desc: Detect unauthorized file access in CloudMart containers
+  condition: >
+    (container.image.repository contains "cloudmart") and
+    (open_write or open_read) and
+    (fd.name startswith "/etc/" or fd.name startswith "/root/" or fd.name startswith "/var/log/") and
+    not proc.name in (node, npm, sh, bash)
+  output: >
+    Unauthorized file access in CloudMart container
+    (user=%user.name command=%proc.cmdline file=%fd.name container_id=%container.id 
+    container_name=%container.name image=%container.image.repository:%container.image.tag)
+  priority: ERROR
+  tags: [filesystem, cloudmart]
+
+- rule: CloudMart Privilege Escalation Attempt
+  desc: Detect privilege escalation attempts in CloudMart containers
+  condition: >
+    (container.image.repository contains "cloudmart") and
+    (proc.name=sudo or proc.name=su or proc.name=passwd or proc.name=chsh or proc.name=newgrp)
+  output: >
+    Privilege escalation attempt in CloudMart container
+    (user=%user.name command=%proc.cmdline container_id=%container.id 
+    container_name=%container.name image=%container.image.repository:%container.image.tag)
+  priority: CRITICAL
+  tags: [privilege_escalation, cloudmart]
+
+- rule: CloudMart Crypto Mining Activity
+  desc: Detect potential crypto mining in CloudMart containers
+  condition: >
+    (container.image.repository contains "cloudmart") and
+    (proc.name contains "xmrig" or proc.name contains "minerd" or proc.name contains "cpuminer" or
+     proc.cmdline contains "stratum" or proc.cmdline contains "mining" or proc.cmdline contains "pool")
+  output: >
+    Potential crypto mining activity in CloudMart container
+    (user=%user.name command=%proc.cmdline container_id=%container.id 
+    container_name=%container.name image=%container.image.repository:%container.image.tag)
+  priority: CRITICAL
+  tags: [malware, cloudmart]
+
+- rule: CloudMart Shell Spawned in Container
+  desc: Detect shell spawned in CloudMart production containers
+  condition: >
+    (container.image.repository contains "cloudmart") and
+    spawned_process and
+    (proc.name=bash or proc.name=sh or proc.name=zsh or proc.name=fish) and
+    container.name != "" and
+    not proc.pname in (node, npm, docker, kubectl)
+  output: >
+    Shell spawned in CloudMart container
+    (user=%user.name shell=%proc.name parent=%proc.pname cmdline=%proc.cmdline 
+    container_id=%container.id container_name=%container.name 
+    image=%container.image.repository:%container.image.tag)
+  priority: WARNING
+  tags: [shell, cloudmart]
+
+- rule: CloudMart Sensitive File Access
+  desc: Detect access to sensitive files in CloudMart containers
+  condition: >
+    (container.image.repository contains "cloudmart") and
+    (open_read or open_write) and
+    (fd.name contains "password" or fd.name contains "secret" or fd.name contains "key" or
+     fd.name contains "token" or fd.name contains "credential" or fd.name endswith ".pem" or
+     fd.name endswith ".key" or fd.name endswith ".crt")
+  output: >
+    Sensitive file access in CloudMart container
+    (user=%user.name command=%proc.cmdline file=%fd.name container_id=%container.id 
+    container_name=%container.name image=%container.image.repository:%container.image.tag)
+  priority: ERROR
+  tags: [secrets, cloudmart]
+
+- rule: CloudMart Unexpected Network Connection
+  desc: Detect unexpected outbound network connections from CloudMart
+  condition: >
+    (container.image.repository contains "cloudmart") and
+    (fd.type=ipv4 or fd.type=ipv6) and
+    (fd.ip != "0.0.0.0") and
+    not (fd.sip.name contains "amazonaws.com" or fd.sip.name contains "google.com" or 
+         fd.sip.name contains "azure.com" or fd.sip.name contains "github.com" or
+         fd.sip.name contains "npmjs.org")
+  output: >
+    Unexpected network connection from CloudMart container
+    (user=%user.name command=%proc.cmdline connection=%fd.name container_id=%container.id 
+    container_name=%container.name image=%container.image.repository:%container.image.tag)
+  priority: WARNING
+  tags: [network, cloudmart]

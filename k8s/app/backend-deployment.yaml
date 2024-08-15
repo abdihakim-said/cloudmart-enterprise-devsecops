@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudmart-backend
+  namespace: default
+  labels:
+    app: cloudmart-backend
+    version: v1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cloudmart-backend
+  template:
+    metadata:
+      labels:
+        app: cloudmart-backend
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: cloudmart-backend-sa
+      containers:
+      - name: backend
+        image: ECR_REGISTRY/cloudmart-backend:IMAGE_TAG
+        ports:
+        - containerPort: 5000
+          name: http
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "5000"
+        - name: AWS_REGION
+          value: "us-east-1"
+        - name: DYNAMODB_PRODUCTS_TABLE
+          valueFrom:
+            configMapKeyRef:
+              name: cloudmart-config
+              key: products-table
+        - name: DYNAMODB_ORDERS_TABLE
+          valueFrom:
+            configMapKeyRef:
+              name: cloudmart-config
+              key: orders-table
+        - name: DYNAMODB_TICKETS_TABLE
+          valueFrom:
+            configMapKeyRef:
+              name: cloudmart-config
+              key: tickets-table
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloudmart-backend
+  namespace: default
+  labels:
+    app: cloudmart-backend
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5000
+    targetPort: 5000
+    protocol: TCP
+    name: http
+  selector:
+    app: cloudmart-backend
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cloudmart-backend-sa
+  namespace: default
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/cloudmart-backend-role
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudmart-config
+  namespace: default
+data:
+  products-table: "cloudmart-products"
+  orders-table: "cloudmart-orders"
+  tickets-table: "cloudmart-tickets"

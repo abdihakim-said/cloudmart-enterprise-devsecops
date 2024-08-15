@@ -1,0 +1,293 @@
+# CloudMart Project Structure
+
+This file documents the complete project organization for easy navigation and maintenance.
+
+## 📁 Root Directory Structure
+
+```
+cloudmart-enterprise-devsecops/
+├── 📄 README.md                          # Main project documentation
+├── 📄 LICENSE                            # MIT License
+├── 📄 CHANGELOG.md                       # Version history and changes
+├── 📄 CONTRIBUTING.md                    # Contribution guidelines
+├── 📄 .gitignore                         # Git ignore patterns
+├── 📄 .project-structure                 # This file - project organization
+│
+├── 📁 .github/                           # GitHub configuration
+│   ├── 📁 workflows/                     # CI/CD pipelines
+│   │   └── 📄 devsecops-pipeline.yml     # Main DevSecOps pipeline
+│   ├── 📁 ISSUE_TEMPLATE/                # Issue templates
+│   │   ├── 📄 bug_report.md              # Bug report template
+│   │   └── 📄 feature_request.md         # Feature request template
+│   ├── 📄 pull_request_template.md       # PR template
+│   └── 📄 REPOSITORY_INFO.md             # Repository configuration guide
+│
+├── 📁 terraform/                         # Infrastructure as Code
+│   ├── 📄 main.tf                        # Main Terraform configuration
+│   ├── 📄 variables.tf                   # Input variables
+│   ├── 📄 outputs.tf                     # Output values
+│   ├── 📄 terraform.tfvars.example       # Example variables file
+│   ├── 📄 versions.tf                    # Provider versions
+│   └── 📁 modules/                       # Reusable Terraform modules
+│       ├── 📁 networking/                # VPC, subnets, security groups
+│       │   ├── 📄 main.tf
+│       │   ├── 📄 variables.tf
+│       │   └── 📄 outputs.tf
+│       ├── 📁 eks/                       # Kubernetes cluster
+│       │   ├── 📄 main.tf
+│       │   ├── 📄 variables.tf
+│       │   └── 📄 outputs.tf
+│       ├── 📁 database/                  # DynamoDB tables
+│       │   ├── 📄 main.tf
+│       │   ├── 📄 variables.tf
+│       │   └── 📄 outputs.tf
+│       ├── 📁 lambda/                    # Serverless functions
+│       │   ├── 📄 main.tf
+│       │   ├── 📄 variables.tf
+│       │   ├── 📄 outputs.tf
+│       │   └── 📁 lambda_functions/      # Lambda source code
+│       │       ├── 📄 list_products.js
+│       │       ├── 📄 dynamodb_to_bigquery.js
+│       │       └── 📄 ai_support.js
+│       ├── 📁 observability/             # Monitoring infrastructure
+│       │   ├── 📄 main.tf
+│       │   ├── 📄 variables.tf
+│       │   └── 📄 outputs.tf
+│       └── 📁 ecr/                       # Container registries
+│           ├── 📄 main.tf
+│           ├── 📄 variables.tf
+│           └── 📄 outputs.tf
+│
+├── 📁 frontend/                          # React application
+│   ├── 📄 package.json                   # Dependencies and scripts
+│   ├── 📄 package-lock.json              # Dependency lock file
+│   ├── 📄 Dockerfile                     # Container build configuration
+│   ├── 📄 .env.example                   # Environment variables example
+│   ├── 📄 vite.config.js                 # Vite build configuration
+│   ├── 📄 tailwind.config.js             # Tailwind CSS configuration
+│   ├── 📄 postcss.config.js              # PostCSS configuration
+│   ├── 📄 eslint.config.js               # ESLint configuration
+│   ├── 📄 index.html                     # Main HTML template
+│   ├── 📄 buildspec-build.yml            # AWS CodeBuild spec for build
+│   ├── 📄 buildspec-deploy.yml           # AWS CodeBuild spec for deploy
+│   ├── 📁 src/                           # Source code
+│   │   ├── 📄 main.jsx                   # Application entry point
+│   │   ├── 📄 App.jsx                    # Main App component
+│   │   ├── 📄 index.css                  # Global styles
+│   │   ├── 📁 components/                # React components
+│   │   │   ├── 📄 MainPage.jsx
+│   │   │   ├── 📄 SupportPage.jsx
+│   │   │   ├── 📄 AboutPage.jsx
+│   │   │   ├── 📄 CartPage.jsx
+│   │   │   ├── 📄 AdminPage.jsx
+│   │   │   ├── 📄 UserProfilePage.jsx
+│   │   │   ├── 📄 OrdersPage.jsx
+│   │   │   ├── 📄 UserOrdersPage.jsx
+│   │   │   └── 📄 AdminTicketView.jsx
+│   │   ├── 📁 config/                    # Configuration files
+│   │   ├── 📁 utils/                     # Utility functions
+│   │   │   └── 📄 userUtils.js
+│   │   └── 📁 assets/                    # Static assets
+│   ├── 📁 public/                        # Public assets
+│   │   └── 📄 vite.svg
+│   └── 📁 tests/                         # Test files
+│       ├── 📄 setup.js
+│       └── 📁 __tests__/
+│
+├── 📁 backend/                           # Node.js API
+│   ├── 📄 package.json                   # Dependencies and scripts
+│   ├── 📄 package-lock.json              # Dependency lock file
+│   ├── 📄 Dockerfile                     # Container build configuration
+│   ├── 📄 .env.example                   # Environment variables example
+│   ├── 📁 src/                           # Source code
+│   │   ├── 📄 server.js                  # Application entry point
+│   │   ├── 📁 routes/                    # API routes
+│   │   │   ├── 📄 productRoutes.js
+│   │   │   ├── 📄 orderRoutes.js
+│   │   │   ├── 📄 aiRoutes.js
+│   │   │   └── 📄 ticketRoutes.js
+│   │   ├── 📁 controllers/               # Business logic controllers
+│   │   ├── 📁 services/                  # Service layer
+│   │   ├── 📁 middleware/                # Express middleware
+│   │   ├── 📁 models/                    # Data models
+│   │   ├── 📁 config/                    # Configuration files
+│   │   └── 📁 utils/                     # Utility functions
+│   └── 📁 tests/                         # Test files
+│       ├── 📄 setup.js
+│       └── 📁 __tests__/
+│
+├── 📁 k8s/                               # Kubernetes manifests
+│   ├── 📁 app/                           # Application deployments
+│   │   ├── 📄 frontend-deployment.yaml   # Frontend K8s resources
+│   │   ├── 📄 backend-deployment.yaml    # Backend K8s resources
+│   │   └── 📄 ingress.yaml               # Ingress configuration
+│   ├── 📁 observability/                 # Monitoring stack
+│   │   ├── 📄 rbac.yaml                  # RBAC and namespace
+│   │   ├── 📄 prometheus-config.yaml     # Prometheus configuration
+│   │   ├── 📄 prometheus-deployment.yaml # Prometheus deployment
+│   │   ├── 📄 grafana-deployment.yaml    # Grafana deployment
+│   │   └── 📄 node-exporter.yaml         # Node Exporter DaemonSet
+│   └── 📁 security/                      # Security policies
+│       ├── 📄 network-policies.yaml      # Network segmentation
+│       └── 📄 pod-security-policies.yaml # Pod security standards
+│
+├── 📁 security/                          # Security configurations
+│   ├── 📄 falco-rules.yaml              # Runtime security rules
+│   ├── 📁 k8s/                          # Kubernetes security
+│   │   ├── 📄 network-policies.yaml
+│   │   └── 📄 pod-security-policies.yaml
+│   ├── 📁 scripts/                      # Security automation
+│   │   ├── 📄 generate-security-report.py
+│   │   ├── 📄 nist-compliance-check.sh
+│   │   ├── 📄 soc2-controls-check.sh
+│   │   └── 📄 post-deployment-security-check.sh
+│   └── 📁 policies/                     # Security policies
+│       ├── 📄 checkov-config.yaml
+│       ├── 📄 tfsec-config.yaml
+│       └── 📄 semgrep-rules.yaml
+│
+├── 📁 scripts/                          # Automation scripts
+│   ├── 📄 deploy-observability.sh       # Monitoring deployment
+│   ├── 📄 setup-environment.sh          # Environment setup
+│   ├── 📄 build-and-push.sh             # Container build automation
+│   ├── 📄 run-tests.sh                  # Test execution
+│   └── 📄 cleanup-resources.sh          # Resource cleanup
+│
+├── 📁 docs/                             # Documentation
+│   ├── 📄 DEPLOYMENT.md                 # Deployment guide
+│   ├── 📄 SECURITY.md                   # Security framework
+│   ├── 📄 OBSERVABILITY.md              # Monitoring guide
+│   ├── 📄 API.md                        # API documentation
+│   ├── 📄 TROUBLESHOOTING.md            # Common issues and solutions
+│   ├── 📁 diagrams/                     # Architecture diagrams
+│   │   ├── 📄 architecture-overview.md
+│   │   ├── 📄 devsecops-pipeline.md
+│   │   ├── 📄 observability-stack.md
+│   │   └── 📄 ai-integration.md
+│   ├── 📁 ADR/                          # Architecture Decision Records
+│   │   ├── 📄 001-multi-cloud-architecture.md
+│   │   ├── 📄 002-container-orchestration.md
+│   │   ├── 📄 003-database-strategy.md
+│   │   └── 📄 004-security-framework.md
+│   ├── 📁 images/                       # Documentation images
+│   │   ├── 📄 cloudmart-architecture.png
+│   │   ├── 📄 security-pipeline.png
+│   │   ├── 📄 monitoring-dashboard.png
+│   │   └── 📄 business-metrics.png
+│   └── 📁 runbooks/                     # Operational runbooks
+│       ├── 📄 incident-response.md
+│       ├── 📄 deployment-rollback.md
+│       └── 📄 disaster-recovery.md
+│
+├── 📁 .zap/                            # OWASP ZAP configuration
+│   └── 📄 rules.tsv                     # ZAP security rules
+│
+├── 📁 monitoring/                       # Monitoring configurations
+│   ├── 📁 grafana/                     # Grafana dashboards
+│   │   ├── 📄 cloudmart-overview.json
+│   │   ├── 📄 infrastructure-metrics.json
+│   │   ├── 📄 application-performance.json
+│   │   └── 📄 security-monitoring.json
+│   ├── 📁 prometheus/                  # Prometheus configurations
+│   │   ├── 📄 alert-rules.yaml
+│   │   ├── 📄 recording-rules.yaml
+│   │   └── 📄 scrape-configs.yaml
+│   └── 📁 alertmanager/               # AlertManager configuration
+│       └── 📄 alertmanager.yaml
+│
+├── 📁 tests/                           # Integration and E2E tests
+│   ├── 📁 integration/                 # Integration tests
+│   │   ├── 📄 api-tests.js
+│   │   ├── 📄 database-tests.js
+│   │   └── 📄 ai-service-tests.js
+│   ├── 📁 e2e/                        # End-to-end tests
+│   │   ├── 📄 user-journey.spec.js
+│   │   ├── 📄 admin-workflow.spec.js
+│   │   └── 📄 ai-support.spec.js
+│   ├── 📁 security/                   # Security tests
+│   │   ├── 📄 postman-security-tests.json
+│   │   ├── 📄 test-environment.json
+│   │   └── 📄 penetration-tests.js
+│   └── 📁 performance/                # Performance tests
+│       ├── 📄 load-tests.js
+│       ├── 📄 stress-tests.js
+│       └── 📄 benchmark-tests.js
+│
+├── 📁 config/                         # Configuration files
+│   ├── 📁 environments/               # Environment-specific configs
+│   │   ├── 📄 development.yaml
+│   │   ├── 📄 staging.yaml
+│   │   └── 📄 production.yaml
+│   ├── 📄 docker-compose.yml          # Local development setup
+│   ├── 📄 docker-compose.override.yml # Development overrides
+│   └── 📄 .env.template               # Environment template
+│
+└── 📁 tools/                          # Development tools
+    ├── 📁 local-development/          # Local dev setup
+    │   ├── 📄 setup-local-env.sh
+    │   ├── 📄 start-services.sh
+    │   └── 📄 stop-services.sh
+    ├── 📁 ci-cd/                     # CI/CD utilities
+    │   ├── 📄 build-helper.sh
+    │   ├── 📄 deploy-helper.sh
+    │   └── 📄 test-helper.sh
+    └── 📁 utilities/                 # General utilities
+        ├── 📄 generate-docs.sh
+        ├── 📄 update-dependencies.sh
+        └── 📄 backup-data.sh
+```
+
+## 📋 File Organization Principles
+
+### 1. **Separation of Concerns**
+- Infrastructure code in `terraform/`
+- Application code in `frontend/` and `backend/`
+- Kubernetes manifests in `k8s/`
+- Security configurations in `security/`
+
+### 2. **Environment Isolation**
+- Development configurations in `config/environments/`
+- Production settings in Terraform variables
+- Test configurations in `tests/`
+
+### 3. **Documentation Structure**
+- User-facing docs in root (`README.md`, `CONTRIBUTING.md`)
+- Technical docs in `docs/`
+- Architecture decisions in `docs/ADR/`
+- Operational guides in `docs/runbooks/`
+
+### 4. **Security Organization**
+- Security policies in `security/`
+- Security tests in `tests/security/`
+- Security monitoring in `monitoring/`
+
+### 5. **Automation & Tools**
+- Deployment scripts in `scripts/`
+- Development tools in `tools/`
+- CI/CD configurations in `.github/workflows/`
+
+## 🎯 Navigation Guide
+
+### For Developers
+- Start with `README.md` for project overview
+- Check `CONTRIBUTING.md` for development guidelines
+- Use `frontend/` and `backend/` for application code
+- Run tests from `tests/` directory
+
+### For DevOps Engineers
+- Infrastructure code in `terraform/`
+- Kubernetes manifests in `k8s/`
+- Monitoring configs in `monitoring/`
+- Deployment scripts in `scripts/`
+
+### For Security Teams
+- Security policies in `security/`
+- Security tests in `tests/security/`
+- Compliance docs in `docs/SECURITY.md`
+- Security monitoring in `monitoring/`
+
+### For Operations Teams
+- Deployment guide in `docs/DEPLOYMENT.md`
+- Runbooks in `docs/runbooks/`
+- Monitoring dashboards in `monitoring/grafana/`
+- Troubleshooting in `docs/TROUBLESHOOTING.md`

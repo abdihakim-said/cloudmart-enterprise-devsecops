@@ -1,0 +1,325 @@
+# CloudMart .gitignore
+
+# ============================================================================
+# Environment & Secrets
+# ============================================================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+.env.*
+!.env.example
+!.env.template
+
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraform/
+.terraform.lock.hcl
+terraform.tfplan
+crash.log
+crash.*.log
+
+# AWS
+.aws/
+aws-exports.js
+
+# ============================================================================
+# Node.js & JavaScript
+# ============================================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+.nyc_output
+
+# ESLint cache
+.eslintcache
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+out
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Gatsby files
+.cache/
+public
+
+# Vite build output
+dist/
+dist-ssr/
+
+# Rollup.js default build output
+dist/
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# ============================================================================
+# React & Frontend
+# ============================================================================
+build/
+.DS_Store
+.vscode/
+.idea/
+
+# ============================================================================
+# Docker & Containers
+# ============================================================================
+docker/dynamodb/
+.docker/
+
+# ============================================================================
+# Kubernetes
+# ============================================================================
+kubeconfig
+*.kubeconfig
+
+# ============================================================================
+# Security & Testing
+# ============================================================================
+# Security scan results
+*.sarif
+security-results/
+trivy-results/
+snyk-results/
+zap-results/
+
+# Test results
+test-results/
+coverage/
+junit.xml
+*.log
+
+# ============================================================================
+# Monitoring & Observability
+# ============================================================================
+# Prometheus data
+prometheus-data/
+
+# Grafana data
+grafana-data/
+
+# Log files
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ============================================================================
+# IDE & Editor
+# ============================================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ============================================================================
+# OS Generated
+# ============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ============================================================================
+# Backup & Temporary Files
+# ============================================================================
+*.bak
+*.tmp
+*.temp
+*~
+.#*
+\#*#
+.*.swp
+.*.swo
+
+# ============================================================================
+# Build & Distribution
+# ============================================================================
+build/
+dist/
+out/
+target/
+
+# ============================================================================
+# Package Managers
+# ============================================================================
+# Yarn
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# pnpm
+.pnpm-store/
+
+# ============================================================================
+# Cloud & Infrastructure
+# ============================================================================
+# Terraform
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+
+# Pulumi
+Pulumi.*.yaml
+
+# CDK
+cdk.out/
+
+# ============================================================================
+# CI/CD
+# ============================================================================
+# GitHub Actions
+.github/workflows/*.log
+
+# Jenkins
+.jenkins/
+
+# ============================================================================
+# Documentation
+# ============================================================================
+# Generated documentation
+docs/generated/
+site/
+
+# ============================================================================
+# Local Development
+# ============================================================================
+# Local development overrides
+docker-compose.override.yml
+.local/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# ============================================================================
+# Performance & Profiling
+# ============================================================================
+# Performance monitoring
+.clinic/
+profile/
+*.cpuprofile
+*.heapprofile
+*.heapsnapshot
+
+# ============================================================================
+# Miscellaneous
+# ============================================================================
+# Runtime configuration
+.runtime/
+
+# Cache directories
+.cache/
+.tmp/
+
+# Lock files (keep package-lock.json and yarn.lock)
+# package-lock.json should be committed
+# yarn.lock should be committed
+
+# Ignore specific files but keep examples
+config.json
+!config.example.json
+
+# Ignore all .zip files except specific ones
+*.zip
+!lambda-functions.zip
+
+# Ignore all certificates and keys
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Ignore all compressed files
+*.tar.gz
+*.rar
+*.7z

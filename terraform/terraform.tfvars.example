@@ -1,0 +1,32 @@
+# CloudMart Terraform Variables Example
+# Copy this file to terraform.tfvars and update with your values
+
+# AWS Configuration
+aws_region = "us-east-1"
+environment = "production"
+
+# VPC Configuration
+vpc_cidr = "10.0.0.0/16"
+availability_zones = ["us-east-1a", "us-east-1b"]
+
+# EKS Configuration
+eks_cluster_version = "1.28"
+eks_node_instance_types = ["t3.medium"]
+eks_node_desired_size = 3
+eks_node_max_size = 6
+eks_node_min_size = 2
+
+# BigQuery Configuration (GCP)
+google_project_id = "your-gcp-project-id"
+bigquery_dataset = "cloudmart"
+bigquery_table = "cloudmart-orders"
+
+# Observability Configuration
+log_retention_days = 30
+
+# Tags (Optional - will use defaults if not specified)
+# additional_tags = {
+#   Owner       = "DevOps Team"
+#   CostCenter  = "Engineering"
+#   Backup      = "Required"
+# }
