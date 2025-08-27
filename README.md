@@ -36,6 +36,11 @@
 
 CloudMart represents a complete digital transformation from legacy monolith to cloud-native, AI-powered microservices architecture.
 
+<div align="center">
+  <img src="docs/images/cloudmart-architecture-overview.png" alt="CloudMart Enterprise Architecture Overview" width="900"/>
+  <p><em>Complete enterprise architecture showcasing multi-cloud integration and AI-powered automation</em></p>
+</div>
+
 ### **Multi-Cloud Strategy**
 - **AWS**: Primary compute (EKS, Lambda, DynamoDB)
 - **Azure**: AI services and sentiment analysis
