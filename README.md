@@ -242,7 +242,8 @@ flowchart LR
     class OPENAI,BEDROCK,AZURE_AI ai
 ```
 
-> 📋 **Detailed Architecture Diagrams**: [View Complete Architecture Documentation](docs/diagrams/)
+> 📋 **Detailed Architecture Diagrams**: [View Complete Architecture Documentation](docs/diagrams/)  
+> 🎯 **Interactive Diagrams**: All diagrams are built with Mermaid and render dynamically on GitHub
 
 ---
 
