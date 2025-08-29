@@ -35,3 +35,4 @@ This file triggers the DevSecOps Infrastructure Pipeline for validation and secu
 # Pipeline trigger test - Fri 29 Aug 2025 23:58:06 EAT
 # Pipeline test with AWS credentials - Sat 30 Aug 2025 00:20:22 EAT
 # Test multi-cloud credentials - Sat 30 Aug 2025 00:46:21 EAT
+# Test Azure Reader permission fix - Sat 30 Aug 2025 01:55:33 EAT
