@@ -33,3 +33,4 @@ terraform apply
 
 This file triggers the DevSecOps Infrastructure Pipeline for validation and security scanning.
 # Pipeline trigger test - Fri 29 Aug 2025 23:58:06 EAT
+# Pipeline test with AWS credentials - Sat 30 Aug 2025 00:20:22 EAT
