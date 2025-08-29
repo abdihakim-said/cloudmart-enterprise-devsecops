@@ -170,20 +170,55 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      # Setup GCP credentials file
+      - name: Setup GCP credentials file
+        run: |
+          echo '${{ secrets.GOOGLE_CREDENTIALS }}' > /tmp/gcp-key.json
+
       # Apply Terraform changes
       - name: 🚀 Terraform Apply
         run: |
           cd terraform
           terraform init
-          terraform plan -out=tfplan
+          terraform plan -out=tfplan \
+            -var="azure_client_id=${{ secrets.AZURE_CLIENT_ID }}" \
+            -var="azure_client_secret=${{ secrets.AZURE_CLIENT_SECRET }}" \
+            -var="azure_subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" \
+            -var="azure_tenant_id=${{ secrets.AZURE_TENANT_ID }}"
           terraform apply -auto-approve tfplan
           echo "✅ Infrastructure changes applied successfully"
+        env:
+          # AWS credentials
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          # Azure provider environment variables
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_USE_CLI: "false"
+          # GCP provider environment variables
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
 
       # Post-apply validation
       - name: ✅ Post-Apply Validation
         run: |
           cd terraform
           terraform plan -detailed-exitcode || echo "Post-apply validation completed"
+        env:
+          # AWS credentials
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          # Azure provider environment variables
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_USE_CLI: "false"
+          # GCP provider environment variables
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
 
       # Generate outputs
       - name: 📊 Update Terraform Outputs
@@ -191,6 +226,19 @@ jobs:
           cd terraform
           terraform output -json > terraform-outputs.json || echo "{}" > terraform-outputs.json
           echo "✅ Terraform outputs updated"
+        env:
+          # AWS credentials
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          # Azure provider environment variables
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_USE_CLI: "false"
+          # GCP provider environment variables
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
 
       - name: Upload Terraform Outputs
         uses: actions/upload-artifact@v4
