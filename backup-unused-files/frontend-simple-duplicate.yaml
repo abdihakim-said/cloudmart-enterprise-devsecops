@@ -1,0 +1,168 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudmart-frontend
+  namespace: default
+  labels:
+    app: cloudmart-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cloudmart-frontend
+  template:
+    metadata:
+      labels:
+        app: cloudmart-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: frontend-config
+          mountPath: /etc/nginx/conf.d
+        - name: frontend-html
+          mountPath: /usr/share/nginx/html
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+      volumes:
+      - name: frontend-config
+        configMap:
+          name: frontend-nginx-config
+      - name: frontend-html
+        configMap:
+          name: frontend-nginx-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-nginx-config
+  namespace: default
+data:
+  default.conf: |
+    server {
+        listen 80;
+        server_name localhost;
+        
+        location / {
+            root /usr/share/nginx/html;
+            try_files $uri $uri/ /index.html;
+            add_header Cache-Control "no-cache, no-store, must-revalidate";
+        }
+        
+        location /api/ {
+            proxy_pass http://cloudmart-backend:5000/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        
+        location /health {
+            return 200 "OK";
+            add_header Content-Type text/plain;
+        }
+    }
+  index.html: |
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>CloudMart - Enterprise E-Commerce</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+            .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .api-test { background: #e8f4fd; padding: 15px; border-radius: 5px; margin: 20px 0; }
+            .product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+            .product-card { border: 1px solid #ddd; padding: 15px; border-radius: 5px; }
+            .btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+            .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+            .success { background: #d4edda; color: #155724; }
+            .error { background: #f8d7da; color: #721c24; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>🚀 CloudMart Enterprise Platform</h1>
+                <p>AI-Powered Multi-Cloud E-Commerce with DevSecOps</p>
+            </div>
+            
+            <div class="api-test">
+                <h3>🔗 API Connection Test</h3>
+                <button class="btn" onclick="testAPI()">Test Backend API</button>
+                <div id="api-status"></div>
+            </div>
+            
+            <div class="product-grid" id="products">
+                <div class="product-card">
+                    <h3>Loading products...</h3>
+                    <p>Connecting to backend API...</p>
+                </div>
+            </div>
+        </div>
+        
+        <script>
+            async function testAPI() {
+                const statusDiv = document.getElementById('api-status');
+                try {
+                    const response = await fetch('/api/health');
+                    if (response.ok) {
+                        statusDiv.innerHTML = '<div class="status success">✅ Backend API Connected Successfully!</div>';
+                        loadProducts();
+                    } else {
+                        statusDiv.innerHTML = '<div class="status error">❌ Backend API Error: ' + response.status + '</div>';
+                    }
+                } catch (error) {
+                    statusDiv.innerHTML = '<div class="status error">❌ Connection Failed: ' + error.message + '</div>';
+                }
+            }
+            
+            async function loadProducts() {
+                try {
+                    const response = await fetch('/api/products');
+                    const products = await response.json();
+                    const productsDiv = document.getElementById('products');
+                    productsDiv.innerHTML = products.map(product => `
+                        <div class="product-card">
+                            <h3>${product.name}</h3>
+                            <p>Price: $${product.price}</p>
+                            <p>ID: ${product.id}</p>
+                        </div>
+                    `).join('');
+                } catch (error) {
+                    document.getElementById('products').innerHTML = '<div class="product-card"><h3>Error loading products</h3><p>' + error.message + '</p></div>';
+                }
+            }
+            
+            // Auto-test on load
+            window.onload = () => testAPI();
+        </script>
+    </body>
+    </html>
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloudmart-frontend
+  namespace: default
+  labels:
+    app: cloudmart-frontend
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  selector:
+    app: cloudmart-frontend
