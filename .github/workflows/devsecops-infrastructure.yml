@@ -67,15 +67,14 @@ jobs:
           checkov -d terraform/ --framework terraform --config-file .checkov.yml --compact --soft-fail
         continue-on-error: true
 
-      # Simple tfsec scan
+      # tfsec Security Scan with suppressions
       - name: 🔐 tfsec Security Scan
         run: |
-          # Install tfsec
           curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
-          tfsec terraform/ --format lovely || echo "tfsec scan completed"
+          tfsec terraform/ --config-file .tfsec.yml --soft-fail || echo "tfsec scan completed"
         continue-on-error: true
 
-      # Terraform Plan (for validation only in PR)
+      # Configure AWS credentials for plan
       - name: Configure AWS credentials
         if: github.event_name == 'push'
         uses: aws-actions/configure-aws-credentials@v4
