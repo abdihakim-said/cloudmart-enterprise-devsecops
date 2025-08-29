@@ -1,13 +1,6 @@
 # Google Cloud Module - BigQuery for Analytics
 # Multi-cloud integration with production best practices
 
-# Configure the Google Cloud Provider
-provider "google" {
-  project = var.gcp_project_id
-  region  = var.gcp_region
-  # Use GOOGLE_CREDENTIALS environment variable
-}
-
 # BigQuery Dataset
 resource "google_bigquery_dataset" "cloudmart" {
   dataset_id                  = var.bigquery_dataset

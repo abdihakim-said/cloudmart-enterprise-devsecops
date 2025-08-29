@@ -1,17 +1,6 @@
 # Azure Module - Text Analytics for Sentiment Analysis
 # Multi-cloud integration with production best practices
 
-# Configure the Microsoft Azure Provider
-provider "azurerm" {
-  features {}
-  
-  # Force use of environment variables, disable CLI
-  use_cli                         = false
-  use_msi                         = false
-  use_oidc                        = false
-  skip_provider_registration      = true
-}
-
 # Resource Group for CloudMart Azure resources
 resource "azurerm_resource_group" "cloudmart" {
   name     = "cloudmart-${var.environment}-rg"
