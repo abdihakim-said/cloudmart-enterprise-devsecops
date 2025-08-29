@@ -1,15 +1,13 @@
 // services/productService.js
-import pkg from 'aws-sdk';
-const { DynamoDB } = pkg;
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, ScanCommand, GetCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import dotenv from 'dotenv';
-dotenv.config();
 import { v4 as uuidv4 } from 'uuid';
 
-const dynamoDb = new DynamoDB.DocumentClient({
-  region: process.env.AWS_REGION,
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
-});
+dotenv.config();
+
+const client = new DynamoDBClient({ region: process.env.AWS_REGION });
+const docClient = DynamoDBDocumentClient.from(client);
 
 const TABLE_NAME = 'cloudmart-products';
 
@@ -18,11 +16,12 @@ export const createProduct = async (product) => {
     TableName: TABLE_NAME,
     Item: {
       ...product,       
-      id:uuidv4().split('-')[0],
-      createdAt: new Date().toISOString()}
+      id: uuidv4().split('-')[0],
+      createdAt: new Date().toISOString()
+    }
   };
 
-  await dynamoDb.put(params).promise();
+  await docClient.send(new PutCommand(params));
   return product;
 };
 
@@ -31,8 +30,7 @@ export const getAllProducts = async () => {
     TableName: TABLE_NAME
   }; 
 
-  const result = await dynamoDb.scan(params).promise();
-
+  const result = await docClient.send(new ScanCommand(params));
   return result.Items;
 };
 
@@ -42,7 +40,7 @@ export const getProductById = async (id) => {
     Key: { id }
   };
 
-  const result = await dynamoDb.get(params).promise();
+  const result = await docClient.send(new GetCommand(params));
   return result.Item;
 };
 
@@ -63,7 +61,7 @@ export const updateProduct = async (id, updates) => {
     ReturnValues: 'ALL_NEW'
   };
 
-  const result = await dynamoDb.update(params).promise();
+  const result = await docClient.send(new UpdateCommand(params));
   return result.Attributes;
 };
 
@@ -73,5 +71,5 @@ export const deleteProduct = async (id) => {
     Key: { id }
   };
 
-  await dynamoDb.delete(params).promise();
+  await docClient.send(new DeleteCommand(params));
 };

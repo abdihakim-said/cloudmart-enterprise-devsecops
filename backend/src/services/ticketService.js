@@ -1,93 +1,93 @@
-import pkg from "aws-sdk";
-const { DynamoDB } = pkg;
-import dotenv from "dotenv";
-import { v4 as uuidv4 } from "uuid";
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, ScanCommand, GetCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import dotenv from 'dotenv';
+import { v4 as uuidv4 } from 'uuid';
 
 dotenv.config();
-const dynamoDb = new DynamoDB.DocumentClient({
-  region: process.env.AWS_REGION,
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-});
 
-const TABLE_NAME = "cloudmart-tickets";
+const client = new DynamoDBClient({ region: process.env.AWS_REGION });
+const docClient = DynamoDBDocumentClient.from(client);
+
+const TABLE_NAME = 'cloudmart-tickets';
 
 export const createTicket = async (ticket) => {
   const params = {
     TableName: TABLE_NAME,
     Item: {
       ...ticket,
-      id: uuidv4().split("-")[0],
+      id: uuidv4().split('-')[0],
       createdAt: new Date().toISOString(),
-    },
+      status: 'open'
+    }
   };
 
-  await dynamoDb.put(params).promise();
+  await docClient.send(new PutCommand(params));
   return params.Item;
 };
 
 export const getAllTickets = async () => {
   const params = {
-    TableName: TABLE_NAME,
+    TableName: TABLE_NAME
   };
 
-  const result = await dynamoDb.scan(params).promise();
+  const result = await docClient.send(new ScanCommand(params));
   return result.Items;
 };
 
 export const getTicketById = async (id) => {
   const params = {
     TableName: TABLE_NAME,
-    Key: { id },
+    Key: { id }
   };
 
-  const result = await dynamoDb.get(params).promise();
+  const result = await docClient.send(new GetCommand(params));
   return result.Item;
+};
+
+export const getTicketsByStatus = async (status) => {
+  const params = {
+    TableName: TABLE_NAME,
+    FilterExpression: '#status = :status',
+    ExpressionAttributeNames: {
+      '#status': 'status'
+    },
+    ExpressionAttributeValues: {
+      ':status': status
+    }
+  };
+
+  const result = await docClient.send(new ScanCommand(params));
+  return result.Items;
 };
 
 export const updateTicket = async (id, updates) => {
   const params = {
     TableName: TABLE_NAME,
     Key: { id },
-    UpdateExpression:
-      "set #status = :status, conversation = :conversation, sentimentScores = :sentimentScores, overallSentiment = :overallSentiment",
+    UpdateExpression: 'set #status = :status, updatedAt = :updatedAt',
     ExpressionAttributeNames: {
-      "#status": "status",
+      '#status': 'status'
     },
     ExpressionAttributeValues: {
-      ":status": updates.status,
-      ":conversation": updates.conversation,
-      ":sentimentScores": updates.sentimentScores,
-      ":overallSentiment": updates.overallSentiment,
+      ':status': updates.status,
+      ':updatedAt': new Date().toISOString()
     },
-    ReturnValues: "ALL_NEW",
+    ReturnValues: 'ALL_NEW'
   };
 
-  const result = await dynamoDb.update(params).promise();
+  const result = await docClient.send(new UpdateCommand(params));
   return result.Attributes;
 };
 
 export const deleteTicket = async (id) => {
   const params = {
     TableName: TABLE_NAME,
-    Key: { id },
+    Key: { id }
   };
 
-  await dynamoDb.delete(params).promise();
+  await docClient.send(new DeleteCommand(params));
 };
 
-export const getTicketsByStatus = async (status) => {
-  const params = {
-    TableName: TABLE_NAME,
-    FilterExpression: "#status = :status",
-    ExpressionAttributeNames: {
-      "#status": "status",
-    },
-    ExpressionAttributeValues: {
-      ":status": status,
-    },
-  };
-
-  const result = await dynamoDb.scan(params).promise();
-  return result.Items;
+export const closeTicket = async (id) => {
+  return await updateTicket(id, { status: 'closed' });
 };

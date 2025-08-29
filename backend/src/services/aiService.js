@@ -9,11 +9,9 @@ import {
   AzureKeyCredential,
   TextAnalyticsClient,
 } from "@azure/ai-text-analytics";
-import awsSdk from "aws-sdk";
 import { v4 as uuidv4 } from "uuid";
 
 const { EventStreamCodec } = pkg;
-const { DynamoDB } = awsSdk;
 
 import dotenv from "dotenv";
 import { deleteOrder, getOrderById, cancelOrder } from "./orderService.js";
@@ -228,11 +226,11 @@ const textAnalyticsClient = new TextAnalyticsClient(
 );
 
 // Updated DynamoDB client
-const dynamoDbClient = new DynamoDB.DocumentClient({
-  region: process.env.AWS_REGION,
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-});
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
+
+const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION });
+const dynamoDbClient = DynamoDBDocumentClient.from(dynamoClient);
 
 // Updated analyzeSentimentAndSave function
 export const analyzeSentimentAndSave = async (thread) => {
@@ -288,12 +286,10 @@ export const analyzeSentimentAndSave = async (thread) => {
     };
 
     // Save to DynamoDB
-    await dynamoDbClient
-      .put({
-        TableName: "cloudmart-tickets",
-        Item: item,
-      })
-      .promise();
+    await dynamoDbClient.send(new PutCommand({
+      TableName: "cloudmart-tickets",
+      Item: item,
+    }));
 
     return {
       threadId: thread.id,

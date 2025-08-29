@@ -1,15 +1,12 @@
-
-import pkg from 'aws-sdk';
-const { DynamoDB } = pkg;
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, ScanCommand, GetCommand, UpdateCommand, DeleteCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import dotenv from 'dotenv';
 import { v4 as uuidv4 } from 'uuid';
 
 dotenv.config();
-const dynamoDb = new DynamoDB.DocumentClient({
-  region: process.env.AWS_REGION,
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
-});
+
+const client = new DynamoDBClient({ region: process.env.AWS_REGION });
+const docClient = DynamoDBDocumentClient.from(client);
 
 const TABLE_NAME = 'cloudmart-orders';
 
@@ -18,12 +15,13 @@ export const createOrder = async (order) => {
     TableName: TABLE_NAME,
     Item: {
       ...order,
-      id:uuidv4().split('-')[0],
-      createdAt: new Date().toISOString()
+      id: uuidv4().split('-')[0],
+      createdAt: new Date().toISOString(),
+      status: 'pending'
     }
   };
 
-  await dynamoDb.put(params).promise();
+  await docClient.send(new PutCommand(params));
   return params.Item;
 };
 
@@ -32,7 +30,7 @@ export const getAllOrders = async () => {
     TableName: TABLE_NAME
   };
 
-  const result = await dynamoDb.scan(params).promise();
+  const result = await docClient.send(new ScanCommand(params));
   return result.Items;
 };
 
@@ -42,7 +40,7 @@ export const getOrderById = async (id) => {
     Key: { id }
   };
 
-  const result = await dynamoDb.get(params).promise();
+  const result = await docClient.send(new GetCommand(params));
   return result.Item;
 };
 
@@ -55,7 +53,7 @@ export const getOrdersByUserEmail = async (email) => {
     }
   };
 
-  const result = await dynamoDb.scan(params).promise();
+  const result = await docClient.send(new ScanCommand(params));
   return result.Items;
 };
 
@@ -63,17 +61,18 @@ export const updateOrder = async (id, updates) => {
   const params = {
     TableName: TABLE_NAME,
     Key: { id },
-    UpdateExpression: 'set #status = :status',
+    UpdateExpression: 'set #status = :status, updatedAt = :updatedAt',
     ExpressionAttributeNames: {
       '#status': 'status'
     },
     ExpressionAttributeValues: {
-      ':status': updates.status
+      ':status': updates.status,
+      ':updatedAt': new Date().toISOString()
     },
     ReturnValues: 'ALL_NEW'
   };
 
-  const result = await dynamoDb.update(params).promise();
+  const result = await docClient.send(new UpdateCommand(params));
   return result.Attributes;
 };
 
@@ -83,24 +82,9 @@ export const deleteOrder = async (id) => {
     Key: { id }
   };
 
-  await dynamoDb.delete(params).promise();
+  await docClient.send(new DeleteCommand(params));
 };
 
-
-export const cancelOrder = async (orderId) => {
-  const params = {
-    TableName: TABLE_NAME,
-    Key: { id: orderId },
-    UpdateExpression: 'set #status = :status',
-    ExpressionAttributeNames: {
-      '#status': 'status',
-    },
-    ExpressionAttributeValues: {
-      ':status': 'Canceled',
-    },
-    ReturnValues: 'ALL_NEW'
-  };
-
-  const result = await dynamoDb.update(params).promise();
-  return result.Attributes;
+export const cancelOrder = async (id) => {
+  return await updateOrder(id, { status: 'cancelled' });
 };
