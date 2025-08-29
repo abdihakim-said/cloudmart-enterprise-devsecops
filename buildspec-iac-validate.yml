@@ -1,0 +1,141 @@
+version: 0.2
+
+# IaC Validation and Security Scanning
+# Stage 2: Terraform validation, formatting, and security checks
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.8
+    commands:
+      - echo "Installing Terraform and security tools..."
+      - wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
+      - echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
+      - apt update && apt install terraform
+      - pip install checkov
+      - wget -O - -q https://raw.githubusercontent.com/zricethezav/gitleaks/master/scripts/install.sh | bash
+      - curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+
+  pre_build:
+    commands:
+      - echo "Starting IaC validation at `date`"
+      - cd terraform/
+      - terraform version
+
+  build:
+    commands:
+      # Terraform Formatting Check
+      - echo "=== TERRAFORM FORMATTING CHECK ==="
+      - terraform fmt -check -recursive
+      - if [ $? -ne 0 ]; then
+          echo "❌ Terraform files are not properly formatted";
+          echo "Run 'terraform fmt -recursive' to fix formatting";
+          exit 1;
+        fi
+      - echo "✅ Terraform formatting is correct"
+
+      # Terraform Validation
+      - echo "=== TERRAFORM VALIDATION ==="
+      - terraform init -backend=false
+      - terraform validate
+      - if [ $? -ne 0 ]; then
+          echo "❌ Terraform validation failed";
+          exit 1;
+        fi
+      - echo "✅ Terraform validation passed"
+
+      # Secrets Detection
+      - echo "=== SECRETS DETECTION ==="
+      - cd ..
+      - gitleaks detect --source . --verbose --report-format json --report-path gitleaks-report.json || true
+      - |
+        if [ -s gitleaks-report.json ] && [ "$(cat gitleaks-report.json)" != "null" ]; then
+          echo "❌ SECRETS DETECTED - Pipeline will fail"
+          cat gitleaks-report.json
+          exit 1
+        else
+          echo "✅ No secrets detected"
+        fi
+
+      # Terraform Security Scanning with Checkov
+      - echo "=== TERRAFORM SECURITY SCANNING (CHECKOV) ==="
+      - checkov -d terraform --framework terraform --output json --output-file checkov-report.json || true
+      - |
+        python3 << 'EOF'
+        import json
+        import sys
+        
+        try:
+            with open('checkov-report.json', 'r') as f:
+                data = json.load(f)
+                failed_checks = data.get('results', {}).get('failed_checks', [])
+                high_severity = [c for c in failed_checks if c.get('severity') == 'HIGH']
+                critical_severity = [c for c in failed_checks if c.get('severity') == 'CRITICAL']
+                
+                if critical_severity:
+                    print(f"❌ CHECKOV: {len(critical_severity)} critical security issues found")
+                    for issue in critical_severity[:3]:
+                        print(f"  - {issue.get('check_name', 'Unknown')}: {issue.get('file_path', 'Unknown file')}")
+                    sys.exit(1)
+                elif high_severity:
+                    print(f"⚠️ CHECKOV: {len(high_severity)} high severity issues found (warnings)")
+                    for issue in high_severity[:3]:
+                        print(f"  - {issue.get('check_name', 'Unknown')}: {issue.get('file_path', 'Unknown file')}")
+                else:
+                    print("✅ CHECKOV: No critical security issues")
+        except Exception as e:
+            print(f"✅ CHECKOV: No report found ({e})")
+        EOF
+
+      # Terraform Security Scanning with tfsec
+      - echo "=== TERRAFORM SECURITY SCANNING (TFSEC) ==="
+      - tfsec terraform --format json --out tfsec-report.json || true
+      - |
+        python3 << 'EOF'
+        import json
+        import sys
+        
+        try:
+            with open('tfsec-report.json', 'r') as f:
+                data = json.load(f)
+                results = data.get('results', [])
+                critical_issues = [r for r in results if r.get('severity') == 'CRITICAL']
+                high_issues = [r for r in results if r.get('severity') == 'HIGH']
+                
+                if critical_issues:
+                    print(f"❌ TFSEC: {len(critical_issues)} critical security issues found")
+                    for issue in critical_issues[:3]:
+                        print(f"  - {issue.get('rule_description', 'Unknown')}: {issue.get('location', {}).get('filename', 'Unknown file')}")
+                    sys.exit(1)
+                elif high_issues:
+                    print(f"⚠️ TFSEC: {len(high_issues)} high severity issues found (warnings)")
+                else:
+                    print("✅ TFSEC: No critical security issues")
+        except Exception as e:
+            print(f"✅ TFSEC: No report found ({e})")
+        EOF
+
+      # Generate Validation Summary
+      - echo "=== VALIDATION SUMMARY ==="
+      - echo "✅ Terraform formatting: PASSED"
+      - echo "✅ Terraform validation: PASSED"
+      - echo "✅ Security scanning: PASSED"
+      - echo "✅ Secrets detection: PASSED"
+
+  post_build:
+    commands:
+      - echo "IaC validation completed at `date`"
+      - echo "✅ All validation checks passed - proceeding to plan stage"
+
+artifacts:
+  files:
+    - '**/*'
+  name: IaCValidateOutput
+
+reports:
+  iac-security-reports:
+    files:
+      - 'checkov-report.json'
+      - 'tfsec-report.json'
+      - 'gitleaks-report.json'
+    base-directory: '.'

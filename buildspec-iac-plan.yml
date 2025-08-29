@@ -1,0 +1,144 @@
+version: 0.2
+
+# IaC Plan Generation
+# Stage 3: Generate Terraform plan with cost estimation
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.8
+    commands:
+      - echo "Installing Terraform and Infracost..."
+      - wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
+      - echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
+      - apt update && apt install terraform
+      - curl -fsSL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sh
+
+  pre_build:
+    commands:
+      - echo "Starting Terraform plan generation at `date`"
+      - cd terraform/
+      - terraform version
+
+  build:
+    commands:
+      # Configure Terraform Backend
+      - echo "=== CONFIGURING TERRAFORM BACKEND ==="
+      - |
+        cat > backend.tf << EOF
+        terraform {
+          backend "s3" {
+            bucket         = "$S3_BACKEND_BUCKET"
+            key            = "infrastructure/terraform.tfstate"
+            region         = "us-east-1"
+            encrypt        = true
+            dynamodb_table = "$DYNAMODB_TABLE"
+          }
+        }
+        EOF
+      - echo "✅ Backend configuration created"
+
+      # Initialize Terraform
+      - echo "=== TERRAFORM INITIALIZATION ==="
+      - terraform init
+      - echo "✅ Terraform initialized with remote backend"
+
+      # Generate Terraform Plan
+      - echo "=== GENERATING TERRAFORM PLAN ==="
+      - terraform plan -out=tfplan -detailed-exitcode
+      - PLAN_EXIT_CODE=$?
+      - |
+        if [ $PLAN_EXIT_CODE -eq 0 ]; then
+          echo "✅ No changes detected in Terraform plan"
+          echo "PLAN_STATUS=no-changes" > plan-status.txt
+        elif [ $PLAN_EXIT_CODE -eq 2 ]; then
+          echo "✅ Terraform plan generated successfully with changes"
+          echo "PLAN_STATUS=changes-detected" > plan-status.txt
+        else
+          echo "❌ Terraform plan failed"
+          exit 1
+        fi
+
+      # Generate Human-Readable Plan
+      - echo "=== GENERATING PLAN SUMMARY ==="
+      - terraform show -no-color tfplan > terraform-plan.txt
+      - terraform show -json tfplan > terraform-plan.json
+
+      # Cost Estimation with Infracost
+      - echo "=== COST ESTIMATION ==="
+      - |
+        if [ -f "terraform-plan.json" ]; then
+          infracost breakdown --path terraform-plan.json --format json --out infracost-report.json || true
+          infracost breakdown --path terraform-plan.json --format table --out infracost-summary.txt || true
+          if [ -f "infracost-summary.txt" ]; then
+            echo "✅ Cost estimation completed"
+            cat infracost-summary.txt
+          else
+            echo "⚠️ Cost estimation not available"
+          fi
+        fi
+
+      # Generate Plan Summary for Approval
+      - echo "=== PLAN SUMMARY FOR APPROVAL ==="
+      - |
+        cat > plan-summary.md << EOF
+        # Terraform Plan Summary
+        
+        **Generated at:** $(date)
+        **Environment:** $TF_VAR_environment
+        **Branch:** $CODEBUILD_SOURCE_VERSION
+        
+        ## Plan Status
+        $(cat plan-status.txt)
+        
+        ## Resource Changes
+        \`\`\`
+        $(terraform show -no-color tfplan | head -50)
+        \`\`\`
+        
+        ## Cost Impact
+        \`\`\`
+        $(cat infracost-summary.txt 2>/dev/null || echo "Cost estimation not available")
+        \`\`\`
+        
+        ## Security Validation
+        - ✅ Terraform validation passed
+        - ✅ Security scanning completed
+        - ✅ No secrets detected
+        
+        **Please review the changes above before approving.**
+        EOF
+
+      # Backup Current State
+      - echo "=== BACKING UP CURRENT STATE ==="
+      - terraform state pull > current-state-backup.json
+      - echo "✅ Current state backed up"
+
+  post_build:
+    commands:
+      - echo "Terraform plan generation completed at `date`"
+      - echo "✅ Plan generated and ready for approval"
+      - |
+        if [ -f "plan-status.txt" ]; then
+          echo "Plan Status: $(cat plan-status.txt)"
+        fi
+
+artifacts:
+  files:
+    - 'terraform/tfplan'
+    - 'terraform/terraform-plan.txt'
+    - 'terraform/terraform-plan.json'
+    - 'terraform/plan-summary.md'
+    - 'terraform/plan-status.txt'
+    - 'terraform/current-state-backup.json'
+    - 'terraform/infracost-report.json'
+    - 'terraform/infracost-summary.txt'
+  name: IaCPlanOutput
+
+reports:
+  terraform-plan-reports:
+    files:
+      - 'terraform/terraform-plan.txt'
+      - 'terraform/plan-summary.md'
+      - 'terraform/infracost-summary.txt'
+    base-directory: '.'

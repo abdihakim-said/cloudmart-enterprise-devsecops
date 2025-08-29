@@ -133,3 +133,13 @@ module "cicd" {
   environment   = var.environment
   project_name  = "cloudmart"
 }
+
+# 7. IaC CI/CD Module - DevSecOps pipeline for infrastructure deployment
+module "iac_cicd" {
+  source = "./modules/iac-cicd"
+  
+  aws_region    = var.aws_region
+  github_owner  = var.github_owner
+  github_repo   = var.github_repo
+  environment   = var.environment
+}
