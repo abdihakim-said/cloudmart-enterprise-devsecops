@@ -64,8 +64,8 @@ jobs:
       - name: 🛡️ Checkov IaC Security Scan
         run: |
           pip install checkov
-          checkov -d terraform/ --framework terraform --compact || echo "Checkov scan completed"
-        continue-on-error: true
+          checkov -d terraform/ --framework terraform --config-file terraform/.checkov.yml --compact
+        continue-on-error: false
 
       # Simple tfsec scan
       - name: 🔐 tfsec Security Scan

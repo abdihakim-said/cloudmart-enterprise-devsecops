@@ -1,0 +1,45 @@
+# Checkov configuration for CloudMart project
+# Suppressions for demo/development environment
+
+framework:
+  - terraform
+
+skip-check:
+  # KMS Key Rotation - Not required for demo environment
+  - CKV_AWS_7
+  
+  # CloudWatch Log Group encryption and retention - Demo environment
+  - CKV_AWS_158  # CloudWatch log group KMS encryption
+  - CKV_AWS_338  # CloudWatch log group 1 year retention
+  
+  # ECR Repository settings - Required for development workflow
+  - CKV_AWS_51   # ECR image tag mutability (need mutable for dev)
+  - CKV_AWS_136  # ECR KMS encryption (AES256 sufficient for demo)
+  
+  # DynamoDB encryption - AWS managed keys sufficient for demo
+  - CKV_AWS_119  # DynamoDB customer managed CMK
+  
+  # EKS Cluster settings - Required for demo accessibility
+  - CKV_AWS_38   # EKS public endpoint (needed for demo access)
+  - CKV_AWS_37   # EKS control plane logging (not required for demo)
+  - CKV_AWS_130  # VPC subnet public IP (required for EKS public access)
+  
+  # Security Group settings - Required for EKS functionality
+  - CKV_AWS_23   # Security group descriptions
+  - CKV_AWS_382  # Security group egress 0.0.0.0/0 (required for EKS)
+  
+  # CodePipeline artifact store - S3 encryption sufficient for demo
+  - CKV_AWS_219  # CodePipeline KMS CMK
+  
+  # Azure Cognitive Services - Required for application functionality
+  - CKV_AZURE_134  # Public network access (required for app integration)
+  - CKV_AZURE_236  # Local authentication (required for API keys)
+  - CKV_AZURE_238  # Managed identity (added but not enforced)
+  
+  # Secrets Manager - AWS managed keys sufficient
+  - CKV_AWS_149  # Secrets Manager KMS CMK
+
+# Suppress by resource path patterns
+skip-path:
+  - "**/.terraform/**"
+  - "**/node_modules/**"
