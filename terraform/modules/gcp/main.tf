@@ -1,15 +1,6 @@
 # Google Cloud Module - BigQuery for Analytics
 # Multi-cloud integration with production best practices
 
-terraform {
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = "~> 5.0"
-    }
-  }
-}
-
 # Configure the Google Cloud Provider
 provider "google" {
   project = var.gcp_project_id
