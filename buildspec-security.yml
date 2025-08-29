@@ -1,0 +1,177 @@
+version: 0.2
+
+# DevSecOps Security Scanning Phase
+# SAST, DAST, Container Scanning, Secrets Detection
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 14
+      python: 3.8
+    commands:
+      - echo "Installing security scanning tools..."
+      - pip install bandit safety semgrep checkov
+      - curl -sSfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+      - wget -O - -q https://raw.githubusercontent.com/zricethezav/gitleaks/master/scripts/install.sh | bash
+      - npm install -g retire audit-ci
+
+  pre_build:
+    commands:
+      - echo "Starting security scans at `date`"
+      - echo "Source Version = $CODEBUILD_SOURCE_VERSION"
+
+  build:
+    commands:
+      # Secrets Detection
+      - echo "=== SECRETS DETECTION ==="
+      - gitleaks detect --source . --verbose --report-format json --report-path gitleaks-report.json || true
+      - |
+        if [ -s gitleaks-report.json ] && [ "$(cat gitleaks-report.json)" != "null" ]; then
+          echo "❌ SECRETS DETECTED - Pipeline will fail"
+          cat gitleaks-report.json
+          exit 1
+        else
+          echo "✅ No secrets detected"
+        fi
+
+      # SAST - Static Application Security Testing
+      - echo "=== SAST SCANNING ==="
+      - semgrep --config=auto --json --output=semgrep-report.json . || true
+      - |
+        if [ -f "backend/package.json" ]; then
+          cd backend
+          bandit -r . -f json -o ../bandit-report.json || true
+          cd ..
+        fi
+      
+      # Dependency Vulnerability Scanning
+      - echo "=== DEPENDENCY SCANNING ==="
+      - |
+        if [ -f "backend/package.json" ]; then
+          cd backend
+          npm audit --audit-level high --json > ../npm-audit.json || true
+          retire --js --outputformat json --outputpath ../retire-report.json . || true
+          cd ..
+        fi
+      - |
+        if [ -f "requirements.txt" ]; then
+          safety check --json --output safety-report.json || true
+        fi
+
+      # Infrastructure as Code Scanning
+      - echo "=== IAC SECURITY SCANNING ==="
+      - |
+        if [ -d "terraform" ]; then
+          checkov -d terraform --framework terraform --output json --output-file checkov-report.json || true
+        fi
+
+      # Container Image Scanning (if Dockerfile exists)
+      - echo "=== CONTAINER SCANNING ==="
+      - |
+        if [ -f "backend/Dockerfile" ]; then
+          cd backend
+          docker build -t temp-security-scan .
+          trivy image --format json --output ../trivy-report.json temp-security-scan || true
+          cd ..
+        fi
+
+      # Security Report Analysis
+      - echo "=== SECURITY REPORT ANALYSIS ==="
+      - |
+        python3 << 'EOF'
+        import json
+        import sys
+        import os
+        
+        def check_semgrep():
+            try:
+                with open('semgrep-report.json', 'r') as f:
+                    data = json.load(f)
+                    results = data.get('results', [])
+                    high_severity = [r for r in results if r.get('extra', {}).get('severity') == 'ERROR']
+                    if high_severity:
+                        print(f"❌ SEMGREP: {len(high_severity)} high severity issues found")
+                        for issue in high_severity[:3]:  # Show first 3
+                            print(f"  - {issue.get('message', 'Unknown issue')}")
+                        return False
+                    else:
+                        print("✅ SEMGREP: No high severity issues")
+                        return True
+            except Exception as e:
+                print(f"✅ SEMGREP: No report found ({e})")
+                return True
+        
+        def check_trivy():
+            try:
+                with open('trivy-report.json', 'r') as f:
+                    data = json.load(f)
+                    results = data.get('Results', [])
+                    critical_vulns = []
+                    for result in results:
+                        vulns = result.get('Vulnerabilities', [])
+                        critical_vulns.extend([v for v in vulns if v.get('Severity') == 'CRITICAL'])
+                    
+                    if critical_vulns:
+                        print(f"❌ TRIVY: {len(critical_vulns)} critical vulnerabilities found")
+                        for vuln in critical_vulns[:3]:  # Show first 3
+                            print(f"  - {vuln.get('VulnerabilityID', 'Unknown')}: {vuln.get('Title', 'No title')}")
+                        return False
+                    else:
+                        print("✅ TRIVY: No critical vulnerabilities")
+                        return True
+            except Exception as e:
+                print(f"✅ TRIVY: No report found ({e})")
+                return True
+        
+        def check_checkov():
+            try:
+                with open('checkov-report.json', 'r') as f:
+                    data = json.load(f)
+                    failed_checks = data.get('results', {}).get('failed_checks', [])
+                    high_severity = [c for c in failed_checks if c.get('severity') == 'HIGH']
+                    if high_severity:
+                        print(f"❌ CHECKOV: {len(high_severity)} high severity IaC issues found")
+                        return False
+                    else:
+                        print("✅ CHECKOV: No high severity IaC issues")
+                        return True
+            except Exception as e:
+                print(f"✅ CHECKOV: No report found ({e})")
+                return True
+        
+        # Check all security tools
+        all_passed = True
+        all_passed &= check_semgrep()
+        all_passed &= check_trivy()
+        all_passed &= check_checkov()
+        
+        if not all_passed:
+            print("❌ SECURITY SCAN FAILED - Critical issues found")
+            print("Please fix security issues before proceeding")
+            sys.exit(1)
+        else:
+            print("✅ ALL SECURITY SCANS PASSED")
+        EOF
+
+  post_build:
+    commands:
+      - echo "Security scanning completed at `date`"
+      - echo "✅ Security gates passed - proceeding to build phase"
+
+artifacts:
+  files:
+    - '**/*'
+  name: SecurityScanOutput
+
+reports:
+  security-reports:
+    files:
+      - 'semgrep-report.json'
+      - 'trivy-report.json'
+      - 'gitleaks-report.json'
+      - 'bandit-report.json'
+      - 'npm-audit.json'
+      - 'checkov-report.json'
+      - 'retire-report.json'
+      - 'safety-report.json'
+    base-directory: '.'

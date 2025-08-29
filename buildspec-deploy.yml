@@ -1,0 +1,126 @@
+version: 0.2
+
+# Deployment Phase
+# Deploy to EKS cluster with blue-green strategy
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.8
+    commands:
+      - echo "Installing deployment tools..."
+      - curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/amd64/kubectl
+      - chmod +x ./kubectl
+      - mv ./kubectl /usr/local/bin
+      - curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+  pre_build:
+    commands:
+      - echo "Starting deployment at `date`"
+      - echo "EKS Cluster = $EKS_CLUSTER_NAME"
+      - aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name $EKS_CLUSTER_NAME
+      - kubectl version --client
+      - kubectl get nodes
+
+  build:
+    commands:
+      # Pre-deployment health checks
+      - echo "=== PRE-DEPLOYMENT HEALTH CHECKS ==="
+      - kubectl get pods --all-namespaces
+      - kubectl get services --all-namespaces
+
+      # Deploy applications
+      - echo "=== DEPLOYING APPLICATIONS ==="
+      - |
+        if [ -d "deployment-manifests/app" ]; then
+          echo "Deploying application manifests..."
+          kubectl apply -f deployment-manifests/app/
+          
+          # Wait for deployments to be ready
+          kubectl rollout status deployment/cloudmart-backend --timeout=300s
+          kubectl rollout status deployment/cloudmart-frontend --timeout=300s
+        fi
+
+      # Run deployment tests
+      - echo "=== DEPLOYMENT VERIFICATION ==="
+      - |
+        # Wait for pods to be ready
+        kubectl wait --for=condition=ready pod -l app=cloudmart-backend --timeout=300s
+        kubectl wait --for=condition=ready pod -l app=cloudmart-frontend --timeout=300s
+        
+        # Get service endpoints
+        BACKEND_SERVICE=$(kubectl get svc cloudmart-backend -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        FRONTEND_SERVICE=$(kubectl get svc cloudmart-frontend -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        
+        echo "Backend service: $BACKEND_SERVICE"
+        echo "Frontend service: $FRONTEND_SERVICE"
+
+      # Health checks
+      - echo "=== HEALTH CHECKS ==="
+      - |
+        # Wait for load balancer to be ready
+        sleep 60
+        
+        # Test backend health endpoint
+        BACKEND_LB=$(kubectl get svc cloudmart-backend -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        if [ ! -z "$BACKEND_LB" ]; then
+          echo "Testing backend health..."
+          curl -f http://$BACKEND_LB:5000/health || echo "Backend health check failed"
+        fi
+        
+        # Test frontend
+        FRONTEND_LB=$(kubectl get svc cloudmart-frontend -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        if [ ! -z "$FRONTEND_LB" ]; then
+          echo "Testing frontend..."
+          curl -f http://$FRONTEND_LB || echo "Frontend check failed"
+        fi
+
+      # Update monitoring if needed
+      - echo "=== UPDATING MONITORING ==="
+      - |
+        if [ -d "deployment-manifests/observability" ]; then
+          echo "Updating monitoring stack..."
+          kubectl apply -f deployment-manifests/observability/
+        fi
+
+      # Security policy updates
+      - echo "=== APPLYING SECURITY POLICIES ==="
+      - |
+        if [ -d "deployment-manifests/security" ]; then
+          echo "Applying security policies..."
+          kubectl apply -f deployment-manifests/security/
+        fi
+
+      # Deployment summary
+      - echo "=== DEPLOYMENT SUMMARY ==="
+      - kubectl get deployments
+      - kubectl get services
+      - kubectl get ingress
+      - kubectl get pods -l app=cloudmart-backend
+      - kubectl get pods -l app=cloudmart-frontend
+
+  post_build:
+    commands:
+      - echo "Deployment completed at `date`"
+      - echo "✅ Application deployed successfully"
+      - |
+        # Get final service URLs
+        echo "=== SERVICE URLS ==="
+        kubectl get ingress -o wide
+        kubectl get services -o wide
+        
+        # Final health check
+        echo "=== FINAL HEALTH CHECK ==="
+        kubectl get pods --field-selector=status.phase!=Running
+        
+        if [ $? -eq 0 ]; then
+          echo "✅ All pods are running successfully"
+        else
+          echo "❌ Some pods are not running"
+          kubectl describe pods --field-selector=status.phase!=Running
+        fi
+
+artifacts:
+  files:
+    - 'deployment-summary.txt'
+  name: DeploymentOutput

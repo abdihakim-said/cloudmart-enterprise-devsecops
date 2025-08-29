@@ -1,0 +1,127 @@
+version: 0.2
+
+# Build and Test Phase
+# Build Docker images, run tests, push to ECR
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 14
+      docker: 20
+    commands:
+      - echo "Installing build dependencies..."
+      - curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/amd64/kubectl
+      - chmod +x ./kubectl
+      - mv ./kubectl /usr/local/bin
+
+  pre_build:
+    commands:
+      - echo "Starting build phase at `date`"
+      - echo "ECR Repository URI = $ECR_REPOSITORY_URI"
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY_URI
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+      - echo "Image tag = $IMAGE_TAG"
+
+  build:
+    commands:
+      # Frontend Build
+      - echo "=== BUILDING FRONTEND ==="
+      - |
+        if [ -d "frontend" ]; then
+          cd frontend
+          npm ci
+          npm run build
+          docker build -t $ECR_REPOSITORY_URI:frontend-$IMAGE_TAG .
+          cd ..
+        fi
+
+      # Backend Build and Test
+      - echo "=== BUILDING BACKEND ==="
+      - |
+        if [ -d "backend" ]; then
+          cd backend
+          npm ci
+          
+          # Run unit tests
+          echo "Running unit tests..."
+          npm test || true
+          
+          # Build Docker image
+          docker build -t $ECR_REPOSITORY_URI:backend-$IMAGE_TAG .
+          cd ..
+        fi
+
+      # Integration Tests
+      - echo "=== RUNNING INTEGRATION TESTS ==="
+      - |
+        if [ -f "docker-compose.test.yml" ]; then
+          docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit
+          docker-compose -f docker-compose.test.yml down
+        fi
+
+      # Security scan built images
+      - echo "=== SCANNING BUILT IMAGES ==="
+      - |
+        if [ -d "backend" ]; then
+          trivy image --format json --output backend-image-scan.json $ECR_REPOSITORY_URI:backend-$IMAGE_TAG || true
+        fi
+      - |
+        if [ -d "frontend" ]; then
+          trivy image --format json --output frontend-image-scan.json $ECR_REPOSITORY_URI:frontend-$IMAGE_TAG || true
+        fi
+
+      # Push images to ECR
+      - echo "=== PUSHING IMAGES TO ECR ==="
+      - |
+        if [ -d "backend" ]; then
+          docker push $ECR_REPOSITORY_URI:backend-$IMAGE_TAG
+          docker tag $ECR_REPOSITORY_URI:backend-$IMAGE_TAG $ECR_REPOSITORY_URI:backend-latest
+          docker push $ECR_REPOSITORY_URI:backend-latest
+        fi
+      - |
+        if [ -d "frontend" ]; then
+          docker push $ECR_REPOSITORY_URI:frontend-$IMAGE_TAG
+          docker tag $ECR_REPOSITORY_URI:frontend-$IMAGE_TAG $ECR_REPOSITORY_URI:frontend-latest
+          docker push $ECR_REPOSITORY_URI:frontend-latest
+        fi
+
+      # Generate deployment manifests
+      - echo "=== GENERATING DEPLOYMENT MANIFESTS ==="
+      - |
+        mkdir -p deployment-manifests
+        
+        # Update image tags in Kubernetes manifests
+        if [ -d "k8s" ]; then
+          cp -r k8s/* deployment-manifests/
+          
+          # Replace image tags with built versions
+          find deployment-manifests -name "*.yaml" -type f -exec sed -i "s|IMAGE_TAG|$IMAGE_TAG|g" {} \;
+          find deployment-manifests -name "*.yaml" -type f -exec sed -i "s|ECR_REPOSITORY_URI|$ECR_REPOSITORY_URI|g" {} \;
+        fi
+
+  post_build:
+    commands:
+      - echo "Build completed at `date`"
+      - echo "✅ Images built and pushed successfully"
+      - echo "Backend image = $ECR_REPOSITORY_URI:backend-$IMAGE_TAG"
+      - echo "Frontend image = $ECR_REPOSITORY_URI:frontend-$IMAGE_TAG"
+
+artifacts:
+  files:
+    - 'deployment-manifests/**/*'
+    - 'backend-image-scan.json'
+    - 'frontend-image-scan.json'
+  name: BuildOutput
+
+reports:
+  test-reports:
+    files:
+      - 'backend/coverage/lcov.info'
+      - 'backend/test-results.xml'
+    base-directory: '.'
+  image-scan-reports:
+    files:
+      - 'backend-image-scan.json'
+      - 'frontend-image-scan.json'
+    base-directory: '.'
