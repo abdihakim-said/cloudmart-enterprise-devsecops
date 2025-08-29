@@ -17,8 +17,9 @@ resource "aws_dynamodb_table" "products" {
   }
 
   global_secondary_index {
-    name     = "CategoryIndex"
-    hash_key = "category"
+    name            = "CategoryIndex"
+    hash_key        = "category"
+    projection_type = "ALL"
   }
 
   point_in_time_recovery {
@@ -34,7 +35,7 @@ resource "aws_dynamodb_table" "products" {
   })
 }
 
-# Orders Table with DynamoDB Streams
+# Orders Table
 resource "aws_dynamodb_table" "orders" {
   name           = "${var.project_name}-orders"
   billing_mode   = "PAY_PER_REQUEST"
@@ -46,7 +47,7 @@ resource "aws_dynamodb_table" "orders" {
   }
 
   attribute {
-    name = "user_id"
+    name = "user_email"
     type = "S"
   }
 
@@ -56,13 +57,15 @@ resource "aws_dynamodb_table" "orders" {
   }
 
   global_secondary_index {
-    name     = "UserOrdersIndex"
-    hash_key = "user_id"
+    name            = "UserEmailIndex"
+    hash_key        = "user_email"
+    projection_type = "ALL"
   }
 
   global_secondary_index {
-    name     = "OrderStatusIndex"
-    hash_key = "status"
+    name            = "StatusIndex"
+    hash_key        = "status"
+    projection_type = "ALL"
   }
 
   stream_enabled   = true
@@ -81,7 +84,7 @@ resource "aws_dynamodb_table" "orders" {
   })
 }
 
-# Support Tickets Table
+# Tickets Table
 resource "aws_dynamodb_table" "tickets" {
   name           = "${var.project_name}-tickets"
   billing_mode   = "PAY_PER_REQUEST"
@@ -93,23 +96,25 @@ resource "aws_dynamodb_table" "tickets" {
   }
 
   attribute {
-    name = "user_id"
-    type = "S"
-  }
-
-  attribute {
     name = "status"
     type = "S"
   }
 
-  global_secondary_index {
-    name     = "UserTicketsIndex"
-    hash_key = "user_id"
+  attribute {
+    name = "user_email"
+    type = "S"
   }
 
   global_secondary_index {
-    name     = "TicketStatusIndex"
-    hash_key = "status"
+    name            = "StatusIndex"
+    hash_key        = "status"
+    projection_type = "ALL"
+  }
+
+  global_secondary_index {
+    name            = "UserEmailIndex"
+    hash_key        = "user_email"
+    projection_type = "ALL"
   }
 
   point_in_time_recovery {
@@ -125,7 +130,7 @@ resource "aws_dynamodb_table" "tickets" {
   })
 }
 
-# Users Table for authentication and profiles
+# Users Table
 resource "aws_dynamodb_table" "users" {
   name           = "${var.project_name}-users"
   billing_mode   = "PAY_PER_REQUEST"
@@ -142,8 +147,9 @@ resource "aws_dynamodb_table" "users" {
   }
 
   global_secondary_index {
-    name     = "EmailIndex"
-    hash_key = "email"
+    name            = "EmailIndex"
+    hash_key        = "email"
+    projection_type = "ALL"
   }
 
   point_in_time_recovery {
