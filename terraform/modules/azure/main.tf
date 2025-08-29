@@ -4,6 +4,9 @@
 # Configure the Microsoft Azure Provider
 provider "azurerm" {
   features {}
+  
+  # Use environment variables set by GitHub Actions
+  use_cli = false
 }
 
 # Resource Group for CloudMart Azure resources

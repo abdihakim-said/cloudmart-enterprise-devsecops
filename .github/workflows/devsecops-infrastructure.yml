@@ -91,6 +91,14 @@ jobs:
           terraform init
           terraform plan -detailed-exitcode -no-color -out=tfplan || echo "Plan completed with changes"
           echo "exitcode=2" >> $GITHUB_OUTPUT
+        env:
+          # Azure provider environment variables
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          # GCP provider environment variables
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
         continue-on-error: true
 
       - name: 📊 Plan Summary
