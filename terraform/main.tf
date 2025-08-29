@@ -30,9 +30,6 @@ terraform {
 }
 
 # Configure the AWS Provider
-provider "aws" {
-  region = var.aws_region
-}
 
 # Configure the Azure Provider
 provider "azurerm" {
@@ -46,17 +43,6 @@ provider "google" {
   region  = var.gcp_region
 }
 
-provider "aws" {
-  region = var.aws_region
-  
-  default_tags {
-    tags = merge(var.tags, {
-      Project     = "CloudMart"
-      Environment = var.environment
-      ManagedBy   = "Terraform"
-    })
-  }
-}
 
 # Local values for common configurations
 locals {
