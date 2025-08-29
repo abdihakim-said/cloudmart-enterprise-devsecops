@@ -9,38 +9,55 @@ exports.handler = async (event) => {
     
     try {
         const params = {
-            TableName: process.env.PRODUCTS_TABLE || '${products_table}'
+            TableName: process.env.PRODUCTS_TABLE || 'cloudmart-products'
         };
         
         const command = new ScanCommand(params);
         const result = await docClient.send(command);
         
-        return {
-            statusCode: 200,
-            headers: {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Headers': 'Content-Type',
-                'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
-            },
-            body: JSON.stringify({
-                success: true,
-                products: result.Items || [],
-                count: result.Count || 0
-            })
+        // Bedrock agent response format
+        const response = {
+            messageVersion: "1.0",
+            response: {
+                actionGroup: event.actionGroup,
+                apiPath: event.apiPath,
+                httpMethod: event.httpMethod,
+                httpStatusCode: 200,
+                responseBody: {
+                    "application/json": {
+                        body: JSON.stringify({
+                            success: true,
+                            products: result.Items || [],
+                            count: result.Count || 0
+                        })
+                    }
+                }
+            }
         };
+        
+        console.log('Response:', JSON.stringify(response, null, 2));
+        return response;
+        
     } catch (error) {
         console.error('Error:', error);
+        
+        // Bedrock agent error response format
         return {
-            statusCode: 500,
-            headers: {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            body: JSON.stringify({
-                success: false,
-                error: error.message
-            })
+            messageVersion: "1.0",
+            response: {
+                actionGroup: event.actionGroup,
+                apiPath: event.apiPath,
+                httpMethod: event.httpMethod,
+                httpStatusCode: 500,
+                responseBody: {
+                    "application/json": {
+                        body: JSON.stringify({
+                            success: false,
+                            error: error.message
+                        })
+                    }
+                }
+            }
         };
     }
 };

@@ -13,7 +13,7 @@ exports.handler = async (event) => {
         const dataset = bigquery.dataset(process.env.BIGQUERY_DATASET_ID || '${bigquery_dataset}');
         const table = dataset.table(process.env.BIGQUERY_TABLE_ID || '${bigquery_table}');
         
-        const rows = [];
+        const rowsToInsert = [];
         
         // Process each record from DynamoDB stream
         for (const record of event.Records) {
@@ -21,32 +21,34 @@ exports.handler = async (event) => {
                 const dynamoRecord = record.dynamodb.NewImage;
                 
                 // Transform DynamoDB record to BigQuery format
+                // Using exact field names from your source code
                 const row = {
-                    order_id: dynamoRecord.id?.S || '',
-                    user_id: dynamoRecord.user_id?.S || '',
-                    total_amount: parseFloat(dynamoRecord.total_amount?.N || '0'),
+                    id: dynamoRecord.id?.S || '',
+                    userEmail: dynamoRecord.userEmail?.S || '',
                     status: dynamoRecord.status?.S || '',
-                    created_at: dynamoRecord.created_at?.S || new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                    event_type: record.eventName,
+                    createdAt: dynamoRecord.createdAt?.S || new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    eventType: record.eventName,
+                    // Add any other fields that might be in your orders
+                    totalAmount: parseFloat(dynamoRecord.totalAmount?.N || '0'),
                     items: JSON.stringify(dynamoRecord.items?.L || [])
                 };
                 
-                rows.push(row);
+                rowsToInsert.push(row);
             }
         }
         
-        if (rows.length > 0) {
+        if (rowsToInsert.length > 0) {
             // Insert rows into BigQuery
-            await table.insert(rows);
-            console.log(`Successfully inserted ${rows.length} rows into BigQuery`);
+            await table.insert(rowsToInsert);
+            console.log('Successfully inserted ' + rowsToInsert.length + ' rows into BigQuery');
         }
         
         return {
             statusCode: 200,
             body: JSON.stringify({
                 success: true,
-                processedRecords: rows.length
+                processedRecords: rowsToInsert.length
             })
         };
         

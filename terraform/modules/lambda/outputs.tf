@@ -20,17 +20,7 @@ output "dynamodb_to_bigquery_function_name" {
   value       = aws_lambda_function.dynamodb_to_bigquery.function_name
 }
 
-output "ai_support_function_arn" {
-  description = "ARN of the AI support Lambda function"
-  value       = aws_lambda_function.ai_support.arn
-}
-
-output "ai_support_function_name" {
-  description = "Name of the AI support Lambda function"
-  value       = aws_lambda_function.ai_support.function_name
-}
-
 output "lambda_role_arn" {
-  description = "ARN of the Lambda execution role"
+  description = "ARN of the Lambda IAM role"
   value       = aws_iam_role.lambda_role.arn
 }
