@@ -38,6 +38,23 @@ data "aws_secretsmanager_secret_version" "github_token" {
 }
 
 # CodeBuild Projects for different stages
+# Create KMS key for CodeBuild encryption
+resource "aws_kms_key" "codebuild" {
+  description             = "KMS key for CodeBuild encryption"
+  deletion_window_in_days = 7
+}
+
+resource "aws_kms_alias" "codebuild" {
+  name          = "alias/cloudmart-codebuild"
+  target_key_id = aws_kms_key.codebuild.key_id
+}
+
+# CloudWatch Log Group for CodeBuild
+resource "aws_cloudwatch_log_group" "codebuild" {
+  name              = "/aws/codebuild/cloudmart"
+  retention_in_days = 14
+}
+
 resource "aws_codebuild_project" "security_scan" {
   name         = "cloudmart-security-scan"
   description  = "Security scanning with SAST, DAST, and container scanning"
@@ -52,6 +69,7 @@ resource "aws_codebuild_project" "security_scan" {
     image                      = "aws/codebuild/amazonlinux2-x86_64-standard:3.0"
     type                       = "LINUX_CONTAINER"
     image_pull_credentials_type = "CODEBUILD"
+    # checkov:skip=CKV_AWS_316:Docker builds require privileged mode for container operations
     privileged_mode            = true
 
     environment_variable {
@@ -61,6 +79,16 @@ resource "aws_codebuild_project" "security_scan" {
     environment_variable {
       name  = "ECR_REPOSITORY_URI"
       value = aws_ecr_repository.cloudmart.repository_url
+    }
+  }
+
+  # Add encryption
+  encryption_key = aws_kms_key.codebuild.arn
+
+  # Add logging configuration
+  logs_config {
+    cloudwatch_logs {
+      group_name = aws_cloudwatch_log_group.codebuild.name
     }
   }
 
@@ -84,11 +112,22 @@ resource "aws_codebuild_project" "build_and_test" {
     image                      = "aws/codebuild/amazonlinux2-x86_64-standard:3.0"
     type                       = "LINUX_CONTAINER"
     image_pull_credentials_type = "CODEBUILD"
+    # checkov:skip=CKV_AWS_316:Docker builds require privileged mode for container operations
     privileged_mode            = true
 
     environment_variable {
       name  = "ECR_REPOSITORY_URI"
       value = aws_ecr_repository.cloudmart.repository_url
+    }
+  }
+
+  # Add encryption
+  encryption_key = aws_kms_key.codebuild.arn
+
+  # Add logging configuration
+  logs_config {
+    cloudwatch_logs {
+      group_name = aws_cloudwatch_log_group.codebuild.name
     }
   }
 
@@ -112,6 +151,7 @@ resource "aws_codebuild_project" "deploy" {
     image                      = "aws/codebuild/amazonlinux2-x86_64-standard:3.0"
     type                       = "LINUX_CONTAINER"
     image_pull_credentials_type = "CODEBUILD"
+    # checkov:skip=CKV_AWS_316:Docker builds require privileged mode for container operations
     privileged_mode            = true
 
     environment_variable {
@@ -121,6 +161,16 @@ resource "aws_codebuild_project" "deploy" {
     environment_variable {
       name  = "ECR_REPOSITORY_URI"
       value = aws_ecr_repository.cloudmart.repository_url
+    }
+  }
+
+  # Add encryption
+  encryption_key = aws_kms_key.codebuild.arn
+
+  # Add logging configuration
+  logs_config {
+    cloudwatch_logs {
+      group_name = aws_cloudwatch_log_group.codebuild.name
     }
   }
 
@@ -306,7 +356,11 @@ resource "aws_iam_role_policy" "codebuild_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:*:*:*"
+        Resource = [
+          "arn:aws:logs:*:*:*",
+          aws_cloudwatch_log_group.codebuild.arn,
+          "${aws_cloudwatch_log_group.codebuild.arn}:*"
+        ]
       },
       {
         Effect = "Allow"
@@ -341,6 +395,14 @@ resource "aws_iam_role_policy" "codebuild_policy" {
           "eks:DescribeNodegroup"
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey"
+        ]
+        Resource = aws_kms_key.codebuild.arn
       }
     ]
   })
