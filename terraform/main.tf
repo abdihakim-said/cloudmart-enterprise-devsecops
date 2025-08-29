@@ -29,6 +29,23 @@ terraform {
   # }
 }
 
+# Configure the AWS Provider
+provider "aws" {
+  region = var.aws_region
+}
+
+# Configure the Azure Provider
+provider "azurerm" {
+  features {}
+  use_cli = false
+}
+
+# Configure the Google Cloud Provider  
+provider "google" {
+  project = var.google_project_id
+  region  = var.gcp_region
+}
+
 provider "aws" {
   region = var.aws_region
   
