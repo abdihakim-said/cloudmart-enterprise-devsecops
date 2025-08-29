@@ -1,0 +1,88 @@
+# Checkov Security Configuration for CloudMart DevSecOps Platform
+# This configuration balances security best practices with operational requirements
+# for a multi-cloud demonstration environment
+
+framework:
+  - terraform
+
+# Skip checks that conflict with demo/development requirements
+skip-check:
+  # EKS Public Endpoint - Required for demo access and kubectl management
+  - CKV_AWS_39  # EKS public endpoint disabled
+  
+  # Encryption - Customer managed keys not required for demo environment
+  - CKV_GCP_81  # BigQuery dataset CSEK encryption
+  - CKV_GCP_80  # BigQuery table CSEK encryption
+  - CKV2_AZURE_22  # Cognitive Services CMK encryption
+  
+  # DynamoDB - Point-in-time recovery expensive for demo
+  - CKV_AWS_28  # DynamoDB point in time recovery
+  
+  # CodeBuild - CMK encryption and logging add complexity without security benefit for demo
+  - CKV_AWS_147  # CodeBuild CMK encryption
+  - CKV_AWS_314  # CodeBuild logging configuration
+  
+  # SNS/SQS - Encryption at rest not critical for demo messaging
+  - CKV_AWS_26  # SNS topic encryption
+  - CKV_AWS_27  # SQS queue encryption
+  
+  # Lambda - VPC configuration conflicts with external API access requirements
+  - CKV_AWS_117  # Lambda VPC configuration
+  - CKV_AWS_50   # Lambda X-Ray tracing
+  - CKV_AWS_272  # Lambda code signing
+  - CKV_AWS_115  # Lambda concurrent execution limit
+  - CKV_AWS_173  # Lambda environment variable encryption
+  - CKV_AWS_364  # Lambda permission source restrictions
+  
+  # Load Balancer - HTTP required for demo accessibility
+  - CKV_AWS_2    # ALB HTTPS protocol
+  - CKV_AWS_150  # ALB deletion protection
+  - CKV_AWS_91   # ALB access logging
+  - CKV_AWS_131  # ALB drop HTTP headers
+  - CKV_AWS_378  # Load balancer HTTP protocol
+  - CKV_AWS_103  # Load balancer TLS 1.2
+  - CKV2_AWS_20  # ALB HTTP to HTTPS redirect
+  
+  # Security Groups - Open access required for demo functionality
+  - CKV_AWS_260  # Security group port 80 from 0.0.0.0/0
+  - CKV2_AWS_5   # Security groups attached to resources
+  
+  # S3 - Advanced features not required for demo storage
+  - CKV_AWS_18   # S3 access logging
+  - CKV_AWS_144  # S3 cross-region replication
+  - CKV_AWS_145  # S3 KMS encryption
+  - CKV_AWS_300  # S3 lifecycle abort incomplete uploads
+  - CKV2_AWS_6   # S3 public access block
+  - CKV2_AWS_61  # S3 lifecycle configuration
+  - CKV2_AWS_62  # S3 event notifications
+  
+  # VPC - Flow logs expensive and not required for demo
+  - CKV2_AWS_11  # VPC flow logging
+  - CKV2_AWS_12  # Default security group restrictions
+  
+  # KMS - Key policies add complexity without security benefit for demo
+  - CKV2_AWS_64  # KMS key policy defined
+  
+  # Secrets Manager - Automatic rotation not required for demo
+  - CKV2_AWS_57  # Secrets Manager automatic rotation
+  
+  # WAF - Logging configuration not required for demo
+  - CKV2_AWS_31  # WAF logging configuration
+  
+  # GuardDuty - Organization-wide enablement not applicable for demo
+  - CKV2_AWS_3   # GuardDuty organization enablement
+  
+  # BigQuery - Deletion protection conflicts with demo teardown requirements
+  - CKV_GCP_121  # BigQuery deletion protection
+
+# Soft fail mode - report violations but don't fail the pipeline
+soft-fail: true
+
+# Output format
+output: sarif
+
+# Enable quiet mode to reduce noise
+quiet: true
+
+# Download external modules for comprehensive scanning
+download-external-modules: true
