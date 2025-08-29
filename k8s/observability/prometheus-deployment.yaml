@@ -19,6 +19,10 @@ spec:
         prometheus.io/port: "9090"
     spec:
       serviceAccountName: prometheus
+      securityContext:
+        fsGroup: 65534
+        runAsUser: 65534
+        runAsNonRoot: true
       containers:
       - name: prometheus
         image: prom/prometheus:v2.45.0
@@ -29,6 +33,8 @@ spec:
           - '--web.console.templates=/etc/prometheus/consoles'
           - '--storage.tsdb.retention.time=30d'
           - '--web.enable-lifecycle'
+          - '--web.route-prefix=/'
+          - '--web.external-url=http://k8s-monitori-grafanai-972f2a0250-868196757.us-east-1.elb.amazonaws.com/prometheus'
           - '--web.enable-admin-api'
         ports:
         - containerPort: 9090

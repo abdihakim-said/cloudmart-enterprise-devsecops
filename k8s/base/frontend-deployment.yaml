@@ -23,13 +23,13 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: ECR_REGISTRY/cloudmart-frontend:IMAGE_TAG
+        image: 682881510910.dkr.ecr.us-east-1.amazonaws.com/cloudmart-frontend:v4-production
         ports:
-        - containerPort: 3000
+        - containerPort: 5001
           name: http
         env:
-        - name: REACT_APP_API_URL
-          value: "http://cloudmart-backend:5000"
+        - name: VITE_API_BASE_URL
+          value: "http://k8s-default-cloudmar-4d66794f32-1622144724.us-east-1.elb.amazonaws.com/api"
         - name: NODE_ENV
           value: "production"
         resources:
@@ -42,13 +42,13 @@ spec:
         livenessProbe:
           httpGet:
             path: /
-            port: 3000
+            port: 5001
           initialDelaySeconds: 30
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /
-            port: 3000
+            port: 5001
           initialDelaySeconds: 5
           periodSeconds: 5
 ---
@@ -62,8 +62,8 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-  - port: 3000
-    targetPort: 3000
+  - port: 80
+    targetPort: 5001
     protocol: TCP
     name: http
   selector:
@@ -90,4 +90,4 @@ spec:
           service:
             name: cloudmart-frontend
             port:
-              number: 3000
+              number: 80

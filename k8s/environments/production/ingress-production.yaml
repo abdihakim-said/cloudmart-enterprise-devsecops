@@ -1,0 +1,72 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cloudmart-production-ingress
+  annotations:
+    # ALB Configuration
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/ip-address-type: ipv4
+    
+    # HTTP only for now
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    
+    # Health Checks
+    alb.ingress.kubernetes.io/healthcheck-path: /
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: '15'
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: '5'
+    alb.ingress.kubernetes.io/healthy-threshold-count: '2'
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: '3'
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+    
+    # Performance
+    alb.ingress.kubernetes.io/load-balancer-attributes: |
+      idle_timeout.timeout_seconds=60,
+      routing.http2.enabled=true
+    
+    # Tags
+    alb.ingress.kubernetes.io/tags: |
+      Environment=production,
+      Project=CloudMart,
+      ManagedBy=Kubernetes
+      
+spec:
+  rules:
+  - http:
+      paths:
+      # API Health Check
+      - path: /api/health
+        pathType: Exact
+        backend:
+          service:
+            name: cloudmart-backend
+            port:
+              number: 5000
+      
+      # Backend API routes
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: cloudmart-backend
+            port:
+              number: 5000
+      
+      # Frontend static assets
+      - path: /assets
+        pathType: Prefix
+        backend:
+          service:
+            name: cloudmart-frontend
+            port:
+              number: 80
+              
+      # Frontend routes (catch-all, must be last)
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: cloudmart-frontend
+            port:
+              number: 80
