@@ -5,8 +5,11 @@
 provider "azurerm" {
   features {}
   
-  # Use environment variables set by GitHub Actions
-  use_cli = false
+  # Explicit configuration for GitHub Actions
+  client_id       = var.azure_client_id
+  client_secret   = var.azure_client_secret
+  subscription_id = var.azure_subscription_id
+  tenant_id       = var.azure_tenant_id
 }
 
 # Resource Group for CloudMart Azure resources

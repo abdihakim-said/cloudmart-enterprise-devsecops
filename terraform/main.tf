@@ -69,6 +69,12 @@ module "azure" {
   azure_location      = var.azure_location
   text_analytics_sku  = var.text_analytics_sku
   
+  # Pass Azure credentials from environment variables
+  azure_client_id       = var.azure_client_id
+  azure_client_secret   = var.azure_client_secret
+  azure_subscription_id = var.azure_subscription_id
+  azure_tenant_id       = var.azure_tenant_id
+  
   tags = local.common_tags
 }
 
