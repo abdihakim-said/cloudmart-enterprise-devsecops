@@ -19,14 +19,14 @@ terraform {
     }
   }
 
-  # Production state management (uncomment for production)
-  # backend "s3" {
-  #   bucket         = "cloudmart-terraform-state-production"
-  #   key            = "infrastructure/terraform.tfstate"
-  #   region         = "us-east-1"
-  #   encrypt        = true
-  #   dynamodb_table = "cloudmart-terraform-locks"
-  # }
+  # Production state management - Enable for CI/CD
+  backend "s3" {
+    bucket         = "cloudmart-terraform-state-2wheu9hm"
+    key            = "infrastructure/terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+    dynamodb_table = "cloudmart-terraform-locks"
+  }
 }
 
 # Configure the AWS Provider
