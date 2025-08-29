@@ -34,13 +34,20 @@ terraform {
 # Configure the Azure Provider
 provider "azurerm" {
   features {}
-  use_cli = false
+  
+  # Use environment variables (ARM_*)
+  use_cli                    = false
+  use_msi                    = false
+  use_oidc                   = false
+  skip_provider_registration = true
 }
 
 # Configure the Google Cloud Provider  
 provider "google" {
   project = var.google_project_id
   region  = var.gcp_region
+  
+  # Use GOOGLE_CREDENTIALS environment variable
 }
 
 
