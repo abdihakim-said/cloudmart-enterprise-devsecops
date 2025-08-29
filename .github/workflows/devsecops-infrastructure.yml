@@ -83,6 +83,12 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      # Setup GCP credentials file
+      - name: Setup GCP credentials file
+        if: github.event_name == 'push'
+        run: |
+          echo '${{ secrets.GOOGLE_CREDENTIALS }}' > /tmp/gcp-key.json
+
       - name: 📋 Terraform Plan
         id: plan
         if: github.event_name == 'push'
@@ -92,13 +98,18 @@ jobs:
           terraform plan -detailed-exitcode -no-color -out=tfplan || echo "Plan completed with changes"
           echo "exitcode=2" >> $GITHUB_OUTPUT
         env:
+          # AWS credentials
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           # Azure provider environment variables
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_USE_CLI: false
           # GCP provider environment variables
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
         continue-on-error: true
 
       - name: 📊 Plan Summary
