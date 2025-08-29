@@ -43,6 +43,11 @@ curl -X POST $API_BASE/ai/analyze-sentiment -d '{"thread":{"messages":[{"text":"
   <img src="CHALLENGE-ARCHITECTURE.png" alt="CloudMart Challenge Architecture" width="800"/>
 </div>
 
+### **AWS Architecture Diagram**
+<div align="center">
+  <img src="cloudmart-aws-architecture.png" alt="CloudMart AWS Architecture" width="800"/>
+</div>
+
 ### **Multi-Cloud Strategy**
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
