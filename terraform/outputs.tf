@@ -1,82 +1,139 @@
-# CloudMart Infrastructure Outputs
+# CloudMart Infrastructure Outputs - Multi-Cloud Production Ready
 
-# Networking Outputs
-output "vpc_id" {
-  description = "ID of the VPC"
-  value       = module.networking.vpc_id
+# General Information
+output "aws_region" {
+  description = "AWS Region where resources are deployed"
+  value       = var.aws_region
 }
 
-output "private_subnet_ids" {
-  description = "IDs of the private subnets"
-  value       = module.networking.private_subnet_ids
+output "azure_location" {
+  description = "Azure location where Text Analytics is deployed"
+  value       = var.azure_location
 }
 
-output "public_subnet_ids" {
-  description = "IDs of the public subnets"
-  value       = module.networking.public_subnet_ids
+output "environment" {
+  description = "Environment name"
+  value       = var.environment
 }
 
-# EKS Outputs
-output "cluster_name" {
-  description = "Name of the EKS cluster"
-  value       = module.eks.cluster_name
+# DynamoDB Outputs - Exact table information from your configuration
+output "dynamodb_tables" {
+  description = "DynamoDB table information"
+  value = {
+    products = {
+      name = module.dynamodb.products_table_name
+      arn  = module.dynamodb.products_table_arn
+    }
+    orders = {
+      name       = module.dynamodb.orders_table_name
+      arn        = module.dynamodb.orders_table_arn
+      stream_arn = module.dynamodb.orders_stream_arn
+    }
+    tickets = {
+      name = module.dynamodb.tickets_table_name
+      arn  = module.dynamodb.tickets_table_arn
+    }
+  }
 }
 
-output "cluster_endpoint" {
-  description = "Endpoint for EKS control plane"
-  value       = module.eks.cluster_endpoint
+# Lambda Outputs - Exact function information from your configuration
+output "lambda_functions" {
+  description = "Lambda function information"
+  value = {
+    list_products = {
+      name = module.lambda.list_products_function_name
+      arn  = module.lambda.list_products_function_arn
+    }
+    dynamodb_to_bigquery = {
+      name = module.lambda.dynamodb_to_bigquery_function_name
+      arn  = module.lambda.dynamodb_to_bigquery_function_arn
+    }
+  }
 }
 
-output "cluster_security_group_id" {
-  description = "Security group ID attached to the EKS cluster"
-  value       = module.eks.cluster_security_group_id
+# Azure Text Analytics Outputs
+output "azure_text_analytics" {
+  description = "Azure Text Analytics service information"
+  value = {
+    name                = module.azure.text_analytics_name
+    resource_group      = module.azure.resource_group_name
+    location           = module.azure.azure_location
+    aws_secret_name    = module.azure.aws_secret_name
+    aws_secret_arn     = module.azure.aws_secret_arn
+  }
+  sensitive = true
 }
 
-# Database Outputs
+# Multi-Cloud Integration
+output "multi_cloud_integration" {
+  description = "Multi-cloud service integration details"
+  value = {
+    aws_dynamodb_tables = [
+      module.dynamodb.products_table_name,
+      module.dynamodb.orders_table_name,
+      module.dynamodb.tickets_table_name
+    ]
+    azure_text_analytics = module.azure.text_analytics_name
+    gcp_bigquery = {
+      project_id = var.google_project_id
+      dataset    = var.bigquery_dataset
+      table      = var.bigquery_table
+    }
+  }
+}
+
+# Key outputs for your application
 output "products_table_name" {
-  description = "Name of the products DynamoDB table"
-  value       = module.database.products_table_name
+  description = "Products table name for your application"
+  value       = module.dynamodb.products_table_name
 }
 
 output "orders_table_name" {
-  description = "Name of the orders DynamoDB table"
-  value       = module.database.orders_table_name
+  description = "Orders table name for your application"
+  value       = module.dynamodb.orders_table_name
 }
 
 output "tickets_table_name" {
-  description = "Name of the tickets DynamoDB table"
-  value       = module.database.tickets_table_name
+  description = "Tickets table name for your application"
+  value       = module.dynamodb.tickets_table_name
 }
 
-# Lambda Outputs
 output "list_products_function_arn" {
-  description = "ARN of the list products Lambda function"
+  description = "List products Lambda function ARN"
   value       = module.lambda.list_products_function_arn
 }
 
-output "dynamodb_to_bigquery_function_arn" {
-  description = "ARN of the DynamoDB to BigQuery Lambda function"
-  value       = module.lambda.dynamodb_to_bigquery_function_arn
+# Deployment Information
+output "deployment_summary" {
+  description = "Summary of deployed multi-cloud infrastructure"
+  value = {
+    aws_resources = {
+      region = var.aws_region
+      dynamodb_tables = 3
+      lambda_functions = 2
+      secrets_manager = 1
+      eks_cluster = 1
+    }
+    azure_resources = {
+      location = var.azure_location
+      text_analytics = 1
+      resource_group = 1
+    }
+    gcp_integration = {
+      bigquery_pipeline = "enabled"
+      project_id = var.google_project_id
+    }
+  }
 }
 
-# ECR Outputs
-output "ecr_repository_urls" {
-  description = "URLs of the ECR repositories"
-  value       = module.ecr.repository_urls
-}
-
-# Observability Outputs
-output "prometheus_endpoint" {
-  description = "Prometheus endpoint URL"
-  value       = module.observability.prometheus_endpoint
-}
-
-output "grafana_endpoint" {
-  description = "Grafana endpoint URL"
-  value       = module.observability.grafana_endpoint
-}
-
-output "observability_bucket" {
-  description = "S3 bucket for observability data"
-  value       = module.observability.observability_bucket
+# EKS Cluster Outputs
+output "eks_cluster" {
+  description = "EKS cluster information"
+  value = {
+    cluster_id       = module.eks.cluster_id
+    cluster_arn      = module.eks.cluster_arn
+    cluster_endpoint = module.eks.cluster_endpoint
+    vpc_id          = module.eks.vpc_id
+  }
+  sensitive = true
 }

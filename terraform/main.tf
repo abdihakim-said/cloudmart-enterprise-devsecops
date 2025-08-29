@@ -1,136 +1,135 @@
-# CloudMart Infrastructure - Main Configuration
+# CloudMart Production Infrastructure
+# Complete multi-cloud architecture with production best practices
+
 terraform {
-  required_version = ">= 1.0"
+  required_version = ">= 1.5.0"
+  
   required_providers {
     aws = {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.1"
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0"
+    }
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 5.0"
     }
   }
+
+  # Production state management (uncomment for production)
+  # backend "s3" {
+  #   bucket         = "cloudmart-terraform-state-production"
+  #   key            = "infrastructure/terraform.tfstate"
+  #   region         = "us-east-1"
+  #   encrypt        = true
+  #   dynamodb_table = "cloudmart-terraform-locks"
+  # }
 }
 
 provider "aws" {
   region = var.aws_region
   
   default_tags {
-    tags = {
+    tags = merge(var.tags, {
       Project     = "CloudMart"
       Environment = var.environment
       ManagedBy   = "Terraform"
-      Owner       = "DevOps-Team"
-    }
+    })
   }
 }
 
 # Local values for common configurations
 locals {
-  project_name = "cloudmart"
-  common_tags = {
+  common_tags = merge(var.tags, {
     Project     = "CloudMart"
     Environment = var.environment
     ManagedBy   = "Terraform"
-  }
+  })
 }
 
-# Networking Module
-module "networking" {
-  source = "./modules/networking"
+# 1. DynamoDB Module - Exact table names and configuration from your setup
+module "dynamodb" {
+  source = "./modules/dynamodb"
   
-  project_name        = local.project_name
+  environment                   = var.environment
+  enable_point_in_time_recovery = var.enable_point_in_time_recovery
+  enable_encryption            = var.enable_encryption
+  
+  tags = local.common_tags
+}
+
+# 2. Azure Module - Text Analytics for sentiment analysis
+module "azure" {
+  source = "./modules/azure"
+  
   environment         = var.environment
-  vpc_cidr           = var.vpc_cidr
-  availability_zones = var.availability_zones
+  azure_location      = var.azure_location
+  text_analytics_sku  = var.text_analytics_sku
   
   tags = local.common_tags
 }
 
-# Database Module (DynamoDB)
-module "database" {
-  source = "./modules/database"
+# 3. GCP Module - BigQuery for analytics
+module "gcp" {
+  source = "./modules/gcp"
   
-  project_name = local.project_name
-  environment  = var.environment
+  gcp_project_id      = var.google_project_id
+  gcp_region          = var.gcp_region
+  bigquery_location   = var.bigquery_location
+  bigquery_dataset    = var.bigquery_dataset
+  bigquery_table      = var.bigquery_table
+  environment         = var.environment
   
   tags = local.common_tags
 }
 
-# Lambda Module
+# 4. Lambda Module - Functions aligned with your exact configuration
 module "lambda" {
   source = "./modules/lambda"
   
-  project_name = local.project_name
-  environment  = var.environment
+  environment    = var.environment
+  lambda_runtime = var.lambda_runtime
   
-  # Dependencies from other modules
-  products_table_name = module.database.products_table_name
-  orders_table_name   = module.database.orders_table_name
-  tickets_table_name  = module.database.tickets_table_name
-  orders_stream_arn   = module.database.orders_stream_arn
+  # DynamoDB dependencies - exact table references
+  products_table_name = module.dynamodb.products_table_name
+  products_table_arn  = module.dynamodb.products_table_arn
+  orders_table_name   = module.dynamodb.orders_table_name
+  orders_table_arn    = module.dynamodb.orders_table_arn
+  orders_stream_arn   = module.dynamodb.orders_stream_arn
+  tickets_table_name  = module.dynamodb.tickets_table_name
+  tickets_table_arn   = module.dynamodb.tickets_table_arn
   
-  # BigQuery configuration
+  # BigQuery configuration - exact values from your setup
   google_project_id = var.google_project_id
   bigquery_dataset  = var.bigquery_dataset
   bigquery_table    = var.bigquery_table
   
+  # Azure integration
+  azure_secret_arn = module.azure.aws_secret_arn
+  
+  # GCP integration
+  gcp_secret_arn = module.gcp.aws_secret_arn
+  
   tags = local.common_tags
 }
 
-# EKS Module
+# 5. EKS Module - Kubernetes cluster for application deployment
 module "eks" {
   source = "./modules/eks"
   
-  project_name = local.project_name
-  environment  = var.environment
-  
-  # Networking dependencies
-  vpc_id              = module.networking.vpc_id
-  private_subnet_ids  = module.networking.private_subnet_ids
-  public_subnet_ids   = module.networking.public_subnet_ids
-  
-  # EKS configuration
-  cluster_version     = var.eks_cluster_version
-  node_instance_types = var.eks_node_instance_types
-  node_desired_size   = var.eks_node_desired_size
-  node_max_size       = var.eks_node_max_size
-  node_min_size       = var.eks_node_min_size
-  
   tags = local.common_tags
 }
 
-# Observability Module
-module "observability" {
-  source = "./modules/observability"
+# 6. CI/CD Module - DevSecOps pipeline for application deployment
+module "cicd" {
+  source = "./modules/cicd"
   
-  project_name = local.project_name
-  environment  = var.environment
-  
-  # Dependencies from other modules
-  vpc_id             = module.networking.vpc_id
-  private_subnet_ids = module.networking.private_subnet_ids
-  cluster_name       = module.eks.cluster_name
-  cluster_endpoint   = module.eks.cluster_endpoint
-  
-  # Observability configuration
-  retention_days = var.log_retention_days
-  
-  tags = local.common_tags
-}
-
-# ECR Module for container images
-module "ecr" {
-  source = "./modules/ecr"
-  
-  project_name = local.project_name
-  environment  = var.environment
-  
-  repositories = [
-    "cloudmart-frontend",
-    "cloudmart-backend"
-  ]
-  
-  tags = local.common_tags
+  aws_region    = var.aws_region
+  github_owner  = var.github_owner
+  github_repo   = var.github_repo
+  environment   = var.environment
+  project_name  = "cloudmart"
 }
