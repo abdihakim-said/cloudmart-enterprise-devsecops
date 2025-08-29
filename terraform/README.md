@@ -37,3 +37,4 @@ This file triggers the DevSecOps Infrastructure Pipeline for validation and secu
 # Test multi-cloud credentials - Sat 30 Aug 2025 00:46:21 EAT
 # Test Azure Reader permission fix - Sat 30 Aug 2025 01:55:33 EAT
 # Test CI/CD user credentials for Lambda access - Sat 30 Aug 2025 02:24:24 EAT
+# Test CI/CD user with IAM read permissions - Sat 30 Aug 2025 02:28:56 EAT
