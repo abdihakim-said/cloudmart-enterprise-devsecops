@@ -167,6 +167,10 @@ resource "aws_lambda_function" "list_products" {
     }
   }
 
+  tracing_config {
+    mode = "Active"
+  }
+
   # Production Best Practices
   dead_letter_config {
     target_arn = aws_sqs_queue.lambda_dlq.arn

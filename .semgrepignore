@@ -1,24 +1,8 @@
-# Semgrep suppressions for CloudMart DevSecOps Pipeline
-# Suppress entire files that are acceptable for production
+# Semgrep suppressions - Only suppress what's truly acceptable
+# Show security expertise by fixing critical issues, not hiding them
 
-# Development scripts - not production code
+# Development scripts only - not production code
 scripts/
 
-# Node Exporter - standard monitoring pattern requiring host access
+# Node exporter requires host access for system metrics (standard pattern)
 k8s/observability/node-exporter.yaml
-
-# Frontend demo files - acceptable for portfolio showcase
-frontend/index.html
-frontend/nginx.conf
-
-# Infrastructure modules - AWS managed encryption acceptable for demo
-terraform/modules/cicd/
-terraform/modules/database/
-terraform/modules/dynamodb/
-terraform/modules/eks/
-terraform/modules/gcp/
-terraform/modules/iac-cicd/
-terraform/modules/lambda/
-terraform/modules/networking/
-terraform/modules/observability/
-terraform/modules/waf/
