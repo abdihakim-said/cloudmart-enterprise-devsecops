@@ -27,7 +27,7 @@ spec:
         fsGroup: 1001
       containers:
       - name: frontend
-        image: 682881510910.dkr.ecr.us-east-1.amazonaws.com/cloudmart-frontend:v4-production
+        image: ECR_REPOSITORY_URI:IMAGE_TAG
         ports:
         - containerPort: 5001
           name: http
