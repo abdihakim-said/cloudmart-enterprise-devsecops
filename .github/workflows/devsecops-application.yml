@@ -12,14 +12,14 @@ on:
     paths:
       - 'frontend/**'
       - 'backend/**'
-      - 'k8s/app/**'
+      - 'k8s/base/**'
       - '.github/workflows/devsecops-application.yml'
   pull_request:
     branches: [ main ]
     paths:
       - 'frontend/**'
       - 'backend/**'
-      - 'k8s/app/**'
+      - 'k8s/base/**'
 
 env:
   AWS_REGION: us-east-1
@@ -194,16 +194,16 @@ jobs:
       - name: 🚀 Deploy Backend
         run: |
           # Update image tags in manifests
-          sed -i "s|IMAGE_TAG|backend-${{ github.sha }}|g" k8s/app/backend-deployment.yaml
-          sed -i "s|ECR_REPOSITORY_URI|${{ secrets.ECR_REPOSITORY_URI }}|g" k8s/app/backend-deployment.yaml
-          kubectl apply -f k8s/app/backend-deployment.yaml
+          sed -i "s|IMAGE_TAG|backend-${{ github.sha }}|g" k8s/base/backend-deployment.yaml
+          sed -i "s|ECR_REPOSITORY_URI|${{ secrets.ECR_REPOSITORY_URI }}|g" k8s/base/backend-deployment.yaml
+          kubectl apply -f k8s/base/backend-deployment.yaml
 
       - name: 🚀 Deploy Frontend
         run: |
           # Update image tags in manifests
-          sed -i "s|IMAGE_TAG|frontend-${{ github.sha }}|g" k8s/app/frontend-deployment.yaml
-          sed -i "s|ECR_REPOSITORY_URI|${{ secrets.ECR_REPOSITORY_URI }}|g" k8s/app/frontend-deployment.yaml
-          kubectl apply -f k8s/app/frontend-deployment.yaml
+          sed -i "s|IMAGE_TAG|frontend-${{ github.sha }}|g" k8s/base/frontend-deployment.yaml
+          sed -i "s|ECR_REPOSITORY_URI|${{ secrets.ECR_REPOSITORY_URI }}|g" k8s/base/frontend-deployment.yaml
+          kubectl apply -f k8s/base/frontend-deployment.yaml
 
       # Health checks
       - name: 🏥 Health Checks
