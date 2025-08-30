@@ -1,0 +1,32 @@
+# Semgrep suppressions for CloudMart DevSecOps Pipeline
+# These are infrastructure warnings that don't affect production security
+
+# Docker Compose - Development only, not used in production
+config/docker-compose.yml
+
+# Node Exporter - Requires hostNetwork/hostPID for system metrics collection
+# This is a standard monitoring pattern and acceptable security trade-off
+k8s/observability/node-exporter.yaml:yaml.kubernetes.security.hostnetwork-pod.hostnetwork-pod
+k8s/observability/node-exporter.yaml:yaml.kubernetes.security.hostpid-pod.hostpid-pod
+k8s/observability/node-exporter.yaml:yaml.kubernetes.security.run-as-non-root.run-as-non-root
+
+# Public subnets - Required for ALB and NAT Gateway functionality
+terraform/modules/eks/main.tf:terraform.aws.security.aws-subnet-has-public-ip-address.aws-subnet-has-public-ip-address
+terraform/modules/networking/main.tf:terraform.aws.security.aws-subnet-has-public-ip-address.aws-subnet-has-public-ip-address
+
+# EKS Public Endpoint - Required for kubectl access and CI/CD operations
+terraform/modules/eks/main.tf:terraform.lang.security.eks-public-endpoint-enabled.eks-public-endpoint-enabled
+
+# IAM Permissions - Required for CI/CD and cross-service operations
+# These are scoped to specific resources and follow least privilege
+terraform/modules/cicd/main.tf:terraform.lang.security.iam.no-iam-creds-exposure.no-iam-creds-exposure
+terraform/modules/cicd/main.tf:terraform.lang.security.iam.no-iam-data-exfiltration.no-iam-data-exfiltration
+terraform/modules/iac-cicd/main.tf:terraform.lang.security.iam.no-iam-data-exfiltration.no-iam-data-exfiltration
+terraform/modules/observability/main.tf:terraform.lang.security.iam.no-iam-data-exfiltration.no-iam-data-exfiltration
+terraform/modules/observability/main.tf:terraform.lang.security.iam.no-iam-resource-exposure.no-iam-resource-exposure
+
+# Frontend integrity - LinkedIn profile image, acceptable for demo purposes
+frontend/index.html:html.security.audit.missing-integrity.missing-integrity
+
+# Nginx headers - Development configuration, production uses ALB
+frontend/nginx.conf:generic.nginx.security.header-redefinition.header-redefinition
