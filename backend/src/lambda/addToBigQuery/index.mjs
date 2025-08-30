@@ -35,14 +35,29 @@ export const handler = async (event) => {
         );
 
         // Prepare the row for BigQuery
+        // Fixed field mapping to match BigQuery schema (orders_v2 table)
+        // Previous version was using 'total' but BigQuery expects 'totalAmount'
+        // Added missing fields: updatedAt, eventType that BigQuery schema requires
         const row = {
           id: newImage.id,
+          userEmail: newImage.userEmail || newImage.customerEmail, // Handle both field names
+          status: newImage.status || newImage.orderStatus, // Handle both field names
           createdAt: newImage.createdAt,
+          updatedAt: new Date().toISOString(), // Required by BigQuery schema
+          eventType: record.eventName, // INSERT/MODIFY/REMOVE - required by BigQuery schema
+          totalAmount: toFixed2(newImage.total || newImage.totalAmount), // Changed from 'total' to 'totalAmount'
           items: JSON.stringify(newImage.items), // Convert DynamoDB List to JSON string
-          status: newImage.status,
-          total: toFixed2(newImage.total), // Ensure total is a float with 2 decimal places
-          userEmail: newImage.userEmail,
         };
+
+        // Legacy code (commented out - was causing BigQuery schema mismatch):
+        // const row = {
+        //   id: newImage.id,
+        //   createdAt: newImage.createdAt,
+        //   items: JSON.stringify(newImage.items),
+        //   status: newImage.status,
+        //   total: toFixed2(newImage.total), // This was wrong - BigQuery expects 'totalAmount'
+        //   userEmail: newImage.userEmail,
+        // };
 
         console.log("Prepared row for BigQuery:", JSON.stringify(row, null, 2));
 
