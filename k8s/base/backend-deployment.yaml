@@ -22,12 +22,22 @@ spec:
         prometheus.io/path: "/metrics"
     spec:
       serviceAccountName: cloudmart-backend-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
       - name: backend
         image: 682881510910.dkr.ecr.us-east-1.amazonaws.com/cloudmart-backend:v3-sdk-fixed
         ports:
         - containerPort: 5000
           name: http
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
         env:
         - name: NODE_ENV
           value: "production"

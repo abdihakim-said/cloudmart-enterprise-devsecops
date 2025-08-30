@@ -21,12 +21,22 @@ spec:
         prometheus.io/port: "3000"
         prometheus.io/path: "/metrics"
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
       - name: frontend
         image: 682881510910.dkr.ecr.us-east-1.amazonaws.com/cloudmart-frontend:v4-production
         ports:
         - containerPort: 5001
           name: http
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
         env:
         - name: VITE_API_BASE_URL
           value: "http://k8s-default-cloudmar-4d66794f32-1622144724.us-east-1.elb.amazonaws.com/api"

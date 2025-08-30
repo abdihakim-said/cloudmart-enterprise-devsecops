@@ -28,6 +28,12 @@ spec:
         ports:
         - containerPort: 3000
           name: web
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
         env:
         - name: GF_SECURITY_ADMIN_PASSWORD
           valueFrom:

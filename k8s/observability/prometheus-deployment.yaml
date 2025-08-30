@@ -33,6 +33,12 @@ spec:
           - '--web.console.templates=/etc/prometheus/consoles'
           - '--storage.tsdb.retention.time=30d'
           - '--web.enable-lifecycle'
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
           - '--web.route-prefix=/'
           - '--web.external-url=http://k8s-monitori-grafanai-972f2a0250-868196757.us-east-1.elb.amazonaws.com/prometheus'
           - '--web.enable-admin-api'
