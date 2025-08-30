@@ -11,7 +11,7 @@ const AboutPage = () => {
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="mb-6">
             <h2 className="text-xl font-semibold text-blue-600 mb-2">Production E-commerce Platform | 2024</h2>
-            <p className="text-gray-600">Live Environment: <a href="https://app.cloudmartsaid.shop" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">https://app.cloudmartsaid.shop</a></p>
+            <p className="text-gray-600">Live Production Environment: <a href="https://app.cloudmartsaid.shop" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">https://app.cloudmartsaid.shop</a></p>
           </div>
 
           <h2 className="text-2xl font-semibold mb-4">OVERVIEW</h2>
