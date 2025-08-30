@@ -40,8 +40,13 @@ const AIAssistant = () => {
 
   const startNewConversation = async () => {
     try {
-      const response = await api.post("/ai/bedrock/start");
-      setConversationId(response.data.conversationId);
+      // CHANGED: Switched from Bedrock to OpenAI due to AWS Bedrock access issues
+      // To revert to Bedrock, uncomment below and comment OpenAI lines:
+      // const response = await api.post("/ai/bedrock/start");
+      // setConversationId(response.data.conversationId);
+      
+      const response = await api.post("/ai/start");
+      setConversationId(response.data.threadId);
     } catch (error) {
       console.error("Error starting new conversation:", error);
     }
@@ -57,25 +62,17 @@ const AIAssistant = () => {
     setIsTyping(true);
 
     try {
-      const response = await api.post("/ai/bedrock/message", {
-        conversationId: conversationId,
+      // CHANGED: Switched from Bedrock to OpenAI due to AWS Bedrock access issues
+      // To revert to Bedrock: use "/ai/bedrock/message" with conversationId and complex response parsing
+      const response = await api.post("/ai/message", {
+        threadId: conversationId,
         message: inputMessage,
       });
 
       setIsTyping(false);
 
-      // Extract the response text from the options object
-      let aiResponseText = "";
-      if (
-        typeof response.data.response === "object" &&
-        response.data.response.options
-      ) {
-        aiResponseText = response.data.response.options.output;
-      } else if (typeof response.data.response === "string") {
-        aiResponseText = response.data.response;
-      } else {
-        aiResponseText = "Sorry, I couldn't process that response.";
-      }
+      // OpenAI returns simple response string
+      const aiResponseText = response.data.response || "Sorry, I couldn't process that response.";
 
       const aiResponse = { text: aiResponseText, sender: "ai" };
       setMessages((prevMessages) => [...prevMessages, aiResponse]);

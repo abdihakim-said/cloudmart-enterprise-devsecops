@@ -102,6 +102,23 @@ module "gcp" {
   tags = local.common_tags
 }
 
+# 3.5. ACM Certificate Module
+module "acm" {
+  source = "./modules/acm"
+  
+  domain_name               = var.domain_name
+  subject_alternative_names = var.subject_alternative_names
+  route53_zone_id          = var.route53_zone_id
+}
+
+# 3.6. WAF Module
+module "waf" {
+  source = "./modules/waf"
+  
+  environment   = var.environment
+  project_name  = var.project_name
+}
+
 # 4. Lambda Module - Functions aligned with your exact configuration
 module "lambda" {
   source = "./modules/lambda"

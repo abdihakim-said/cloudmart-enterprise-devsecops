@@ -137,3 +137,24 @@ output "eks_cluster" {
   }
   sensitive = true
 }
+# Security Outputs
+output "acm_certificate_arn" {
+  description = "ACM certificate ARN for HTTPS"
+  value       = module.acm.certificate_arn
+}
+
+output "waf_acl_arn" {
+  description = "WAF Web ACL ARN for security"
+  value       = module.waf.waf_acl_arn
+}
+
+# Enterprise Security Summary
+output "enterprise_security" {
+  description = "Enterprise security configuration"
+  value = {
+    certificate_arn = module.acm.certificate_arn
+    waf_acl_arn     = module.waf.waf_acl_arn
+    domain_name     = var.domain_name
+    tls_policy      = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+  }
+}
