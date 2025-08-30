@@ -1,9 +1,6 @@
 # Semgrep suppressions for CloudMart DevSecOps Pipeline
 # These are infrastructure warnings that don't affect production security
 
-# Docker Compose - Development only, not used in production
-config/docker-compose.yml
-
 # Node Exporter - Requires hostNetwork/hostPID for system metrics collection
 # This is a standard monitoring pattern and acceptable security trade-off
 k8s/observability/node-exporter.yaml:yaml.kubernetes.security.hostnetwork-pod.hostnetwork-pod
