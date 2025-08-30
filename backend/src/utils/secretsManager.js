@@ -16,7 +16,7 @@ export const getSecret = async (secretName) => {
     cachedSecrets[secretName] = secrets;
     return secrets;
   } catch (error) {
-    console.error(`Error fetching secret ${secretName}:`, error);
+    console.error('Error fetching secret:', secretName, error);
     throw error;
   }
 };

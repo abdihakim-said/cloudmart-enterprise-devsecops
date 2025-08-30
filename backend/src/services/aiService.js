@@ -106,7 +106,7 @@ export const sendOpenAIMessage = async (threadId, message) => {
             result = `Order ${orderId} has been successfully canceled. New status: ${updatedOrder.status}`;
           }
         } catch (error) {
-          console.error(`Error processing order ${orderId}:`, error);
+          console.error('Error processing order:', orderId, error);
           result = `An error occurred while processing the order: ${error.message}`;
         }
 

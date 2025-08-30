@@ -208,6 +208,7 @@ resource "aws_eks_addon" "ebs_csi" {
 resource "aws_kms_key" "eks" {
   description = "EKS Secret Encryption Key"
   deletion_window_in_days = 7
+  enable_key_rotation = true
 }
 
 resource "aws_kms_alias" "eks" {

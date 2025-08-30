@@ -45,6 +45,7 @@ resource "azurerm_cognitive_account" "text_analytics" {
 resource "aws_kms_key" "secrets" {
   description             = "KMS key for Azure secrets encryption"
   deletion_window_in_days = 7
+  enable_key_rotation     = true
 }
 
 resource "aws_kms_alias" "secrets" {

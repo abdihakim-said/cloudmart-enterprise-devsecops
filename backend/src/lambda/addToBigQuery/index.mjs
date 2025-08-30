@@ -54,12 +54,12 @@ export const handler = async (event) => {
             .insert([row]);
 
           console.log(
-            `Inserted row with ID ${row.id} into BigQuery. API Response:`,
+            'Inserted row with ID into BigQuery. API Response:', row.id,
             JSON.stringify(apiResponse, null, 2)
           );
         } catch (insertError) {
           console.error(
-            `Error inserting row with ID ${row.id} into BigQuery:`,
+            'Error inserting row with ID into BigQuery:', row.id,
             insertError
           );
           if (insertError.errors && insertError.errors.length > 0) {

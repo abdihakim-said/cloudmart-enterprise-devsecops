@@ -5,7 +5,7 @@ resource "aws_ecr_repository" "repositories" {
   count = length(var.repositories)
   name  = "${var.project_name}-${var.repositories[count.index]}"
 
-  image_tag_mutability = "MUTABLE"
+  image_tag_mutability = "IMMUTABLE"
 
   image_scanning_configuration {
     scan_on_push = true

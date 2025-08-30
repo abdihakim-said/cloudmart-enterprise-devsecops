@@ -42,6 +42,7 @@ data "aws_secretsmanager_secret_version" "github_token" {
 resource "aws_kms_key" "codebuild" {
   description             = "KMS key for CodeBuild encryption"
   deletion_window_in_days = 7
+  enable_key_rotation     = true
 }
 
 resource "aws_kms_alias" "codebuild" {
@@ -183,7 +184,7 @@ resource "aws_codebuild_project" "deploy" {
 # ECR Repository
 resource "aws_ecr_repository" "cloudmart" {
   name                 = "cloudmart"
-  image_tag_mutability = "MUTABLE"
+  image_tag_mutability = "IMMUTABLE"
 
   image_scanning_configuration {
     scan_on_push = true
