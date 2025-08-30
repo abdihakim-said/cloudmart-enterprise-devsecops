@@ -193,6 +193,13 @@ jobs:
       - name: Update kubeconfig
         run: |
           aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}
+          
+      - name: Debug kubectl access
+        run: |
+          echo "Testing kubectl access..."
+          kubectl auth can-i get pods --all-namespaces || echo "No permissions"
+          kubectl config view --minify
+          aws sts get-caller-identity
 
       # Deploy applications
       - name: 🚀 Deploy Backend
