@@ -216,6 +216,11 @@ jobs:
           sed -i "s|ECR_REPOSITORY_URI|${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}|g" k8s/base/frontend-deployment.yaml
           kubectl apply -f k8s/base/frontend-deployment.yaml
 
+      - name: 🌐 Deploy Ingress
+        run: |
+          # Deploy ingress after both backend and frontend are deployed
+          kubectl apply -f k8s/base/ingress.yaml
+
       # Health checks
       - name: 🏥 Health Checks
         run: |

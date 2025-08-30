@@ -1,0 +1,57 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    alb.ingress.kubernetes.io/actions.response-headers: '{"Type":"fixed-response","FixedResponseConfig":{"ContentType":"text/plain","StatusCode":"200","MessageBody":"OK"},"ResponseHeaders":{"Strict-Transport-Security":"max-age=31536000;
+      includeSubDomains; preload","X-Content-Type-Options":"nosniff","X-Frame-Options":"DENY","X-XSS-Protection":"1;
+      mode=block","Referrer-Policy":"strict-origin-when-cross-origin"}}'
+    alb.ingress.kubernetes.io/actions.ssl-redirect: '{"Type":"redirect","RedirectConfig":{"Protocol":"HTTPS","Port":"443","StatusCode":"HTTP_301"}}'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:682881510910:certificate/ad92019b-22d3-4bde-abf1-2909a68d9c4e
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
+    alb.ingress.kubernetes.io/healthcheck-path: /
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/ip-address-type: ipv4
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/load-balancer-attributes: |
+      idle_timeout.timeout_seconds=60,
+      routing.http2.enabled=true,
+      deletion_protection.enabled=true
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/tags: |
+      Environment=production,
+      Project=CloudMart,
+      ManagedBy=Kubernetes,
+      Security=Enhanced
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "3"
+    alb.ingress.kubernetes.io/wafv2-acl-arn: arn:aws:wafv2:us-east-1:682881510910:regional/webacl/cloudmart-production-waf/702bcc26-61ac-44ea-b135-ffa338575a14
+    kubernetes.io/ingress.class: alb
+  name: cloudmart-production-ingress
+  namespace: default
+spec:
+  rules:
+  - host: app.cloudmartsaid.shop
+    http:
+      paths:
+      - backend:
+          service:
+            name: cloudmart-backend
+            port:
+              number: 5000
+        path: /api
+        pathType: Prefix
+      - backend:
+          service:
+            name: cloudmart-frontend
+            port:
+              number: 80
+        path: /
+        pathType: Prefix
+status:
+  loadBalancer:
+    ingress:
+    - hostname: k8s-default-cloudmar-4d66794f32-1622144724.us-east-1.elb.amazonaws.com
