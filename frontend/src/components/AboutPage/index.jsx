@@ -16,9 +16,51 @@ const AboutPage = () => {
 
           <h2 className="text-2xl font-semibold mb-4">OVERVIEW</h2>
           <p className="mb-6">
-            Built and deployed a production-ready e-commerce platform demonstrating enterprise-level 
-            DevOps/SRE expertise with multi-cloud architecture, AI integration, and advanced security practices.
+            CloudMart is a modern e-commerce platform built to demonstrate enterprise-level cloud architecture 
+            and DevSecOps practices. Our platform provides a seamless shopping experience while showcasing 
+            advanced cloud technologies, AI integration, and security best practices.
           </p>
+
+          <h2 className="text-2xl font-semibold mb-4">🛍️ WHAT WE OFFER</h2>
+          <div className="grid md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <h3 className="font-semibold mb-2 text-blue-600">Product Catalog</h3>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>Curated selection of technology products</li>
+                <li>Real-time inventory management</li>
+                <li>Advanced search and filtering</li>
+                <li>Product recommendations</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-2 text-blue-600">AI-Powered Features</h3>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>Intelligent customer support chatbot</li>
+                <li>Sentiment analysis for feedback</li>
+                <li>Personalized shopping experience</li>
+                <li>Automated order processing</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 className="text-2xl font-semibold mb-4">🏪 CLOUDMART EXPERIENCE</h2>
+          <div className="bg-blue-50 p-4 rounded-lg mb-6">
+            <h3 className="font-semibold mb-2">Shop with Confidence</h3>
+            <p className="text-sm mb-2">
+              Browse our technology catalog featuring laptops, smartphones, accessories, and more. 
+              Each product is carefully selected to demonstrate real e-commerce functionality.
+            </p>
+            <h3 className="font-semibold mb-2">AI Assistant Support</h3>
+            <p className="text-sm mb-2">
+              Get instant help from our AI-powered customer support. Ask questions about products, 
+              orders, or get personalized recommendations powered by OpenAI and AWS Bedrock.
+            </p>
+            <h3 className="font-semibold mb-2">Secure & Reliable</h3>
+            <p className="text-sm">
+              Shop with confidence knowing your data is protected by enterprise-grade security, 
+              encrypted transactions, and reliable cloud infrastructure.
+            </p>
+          </div>
 
           <h2 className="text-2xl font-semibold mb-4">🏆 KEY ACHIEVEMENTS</h2>
           <ul className="list-disc list-inside mb-6 space-y-2">
@@ -75,19 +117,22 @@ const AboutPage = () => {
             </p>
           </div>
 
-          <h2 className="text-2xl font-semibold mb-4">📊 LIVE METRICS</h2>
+          <h2 className="text-2xl font-semibold mb-4">🎯 WHY CHOOSE CLOUDMART</h2>
           <div className="grid md:grid-cols-3 gap-4 mb-6">
             <div className="bg-green-50 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-green-600">99.9%</div>
-              <div className="text-sm text-gray-600">Uptime SLA</div>
+              <div className="text-2xl font-bold text-green-600 mb-2">🚀</div>
+              <div className="font-semibold mb-1">Fast & Reliable</div>
+              <div className="text-sm text-gray-600">Sub-200ms response times with 99.9% uptime</div>
             </div>
             <div className="bg-blue-50 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-blue-600">&lt;200ms</div>
-              <div className="text-sm text-gray-600">Response Time</div>
+              <div className="text-2xl font-bold text-blue-600 mb-2">🤖</div>
+              <div className="font-semibold mb-1">AI-Powered</div>
+              <div className="text-sm text-gray-600">Smart recommendations and instant support</div>
             </div>
             <div className="bg-purple-50 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-purple-600">95%+</div>
-              <div className="text-sm text-gray-600">Pipeline Success</div>
+              <div className="text-2xl font-bold text-purple-600 mb-2">🔒</div>
+              <div className="font-semibold mb-1">Enterprise Security</div>
+              <div className="text-sm text-gray-600">Bank-level encryption and data protection</div>
             </div>
           </div>
 
