@@ -1,5 +1,11 @@
 name: 🏗️ DevSecOps Infrastructure Pipeline
 
+# Required permissions for security scanning and SARIF upload
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
 on:
   push:
     branches: [ main ]
