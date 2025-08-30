@@ -98,7 +98,7 @@ const AboutPage = () => {
             </p>
             <p className="mb-2">
               Specializing in enterprise-scale cloud infrastructure, DevSecOps automation, and AI integration.
-              Passionate about building secure, scalable, and reliable systems that deliver real business value.
+              Passionate about building secure, scalable, and reliable systems that deliver measurable business value.
             </p>
             <p>
               <strong>Connect:</strong> 
