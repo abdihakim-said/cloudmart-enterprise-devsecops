@@ -83,9 +83,6 @@ curl -X POST https://app.cloudmartsaid.shop/api/ai/analyze-sentiment -d '{"threa
    (4 tools)        (Multi-stage)     (EKS)      (Automated)      (95%+)
 ```
 
-### **📊 Production Dashboard**
-![Grafana Monitoring](./screenshots/grafana-dashboard.png)
-*Real-time monitoring with Prometheus and Grafana showing system health*
 
 ---
 
@@ -192,9 +189,6 @@ curl -X POST https://app.cloudmartsaid.shop/api/ai/analyze-sentiment -d '{"threa
    (4 tools)        (Multi-stage)     (EKS)      (Automated)      (95%+)
 ```
 
-### **📊 Production Dashboard**
-![Grafana Monitoring](./screenshots/grafana-dashboard.png)
-*Real-time monitoring with Prometheus and Grafana showing system health*
 
 ---
 
