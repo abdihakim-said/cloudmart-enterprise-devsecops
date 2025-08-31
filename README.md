@@ -315,7 +315,7 @@ cloudmart-enterprise-devsecops/
 ├── 📁 backend/                     # Node.js API
 ├── 📁 .github/workflows/           # CI/CD pipelines
 ├── 📁 monitoring/                  # Grafana dashboards
-└── 📁 docs/                        # Technical documentation
+
 ```
 
 ---
