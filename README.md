@@ -71,7 +71,7 @@ curl -X POST https://app.cloudmartsaid.shop/api/ai/analyze-sentiment -d '{"threa
 ```
 
 ### **🏗️ System Architecture**
-![Multi-Cloud Architecture](./screenshots/cloudmart-architecture.png)
+![Multi-Cloud Architecture](./screenshots/cloudmart-aws-architecture.png)
 *Enterprise-grade multi-cloud architecture spanning AWS, Azure, and GCP*
 ### **🎯 Technical Challenge Architecture**
 ![Challenge Architecture](./screenshots/CHALLENGE-ARCHITECTURE.png)
