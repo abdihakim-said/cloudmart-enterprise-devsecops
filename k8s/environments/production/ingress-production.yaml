@@ -73,6 +73,21 @@ metadata:
       routing.http2.enabled=true,
       deletion_protection.enabled=true
     
+    # Force metrics path routing
+    alb.ingress.kubernetes.io/actions.metrics-backend: |
+      {
+        "Type": "forward",
+        "ForwardConfig": {
+          "TargetGroups": [
+            {
+              "ServiceName": "cloudmart-backend",
+              "ServicePort": "5000",
+              "Weight": 100
+            }
+          ]
+        }
+      }
+    
     # ✅ VERIFIED WAF Protection
     # WAF ARN: arn:aws:wafv2:us-east-1:682881510910:regional/webacl/cloudmart-production-waf/702bcc26-61ac-44ea-b135-ffa338575a14
     alb.ingress.kubernetes.io/wafv2-acl-arn: arn:aws:wafv2:us-east-1:682881510910:regional/webacl/cloudmart-production-waf/702bcc26-61ac-44ea-b135-ffa338575a14
@@ -84,7 +99,8 @@ metadata:
       ManagedBy=Kubernetes,
       Security=Enhanced,
       Domain=app.cloudmartsaid.shop,
-      Certificate=ACM-Trusted
+      Certificate=ACM-Trusted,
+      Updated=2025-08-31-metrics
 
 spec:
   rules:
@@ -96,7 +112,35 @@ spec:
   - host: app.cloudmartsaid.shop
     http:
       paths:
-      # Backend API routes
+      # Monitoring endpoints
+      - path: /grafana
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana
+            port:
+              number: 3000
+            namespace: monitoring
+      
+      - path: /prometheus
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus
+            port:
+              number: 9090
+            namespace: monitoring
+      
+      # Most specific paths first
+      - path: /metrics
+        pathType: Exact
+        backend:
+          service:
+            name: cloudmart-backend
+            port:
+              number: 5000
+      
+      # API routes
       - path: /api
         pathType: Prefix
         backend:
@@ -105,7 +149,7 @@ spec:
             port:
               number: 5000
       
-      # Frontend routes (catch-all)
+      # Frontend catch-all (must be last)
       - path: /
         pathType: Prefix
         backend:

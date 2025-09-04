@@ -2,6 +2,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, ScanCommand, GetCommand, UpdateCommand, DeleteCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import dotenv from 'dotenv';
 import { v4 as uuidv4 } from 'uuid';
+import { trackOrder, trackDatabaseOperation } from '../middleware/metrics.js';
 
 dotenv.config();
 
@@ -11,18 +12,24 @@ const docClient = DynamoDBDocumentClient.from(client);
 const TABLE_NAME = 'cloudmart-orders';
 
 export const createOrder = async (order) => {
-  const params = {
-    TableName: TABLE_NAME,
-    Item: {
-      ...order,
-      id: uuidv4().split('-')[0],
-      createdAt: new Date().toISOString(),
-      status: 'pending'
-    }
-  };
+  return await trackDatabaseOperation('create', TABLE_NAME, async () => {
+    const params = {
+      TableName: TABLE_NAME,
+      Item: {
+        ...order,
+        id: uuidv4().split('-')[0],
+        createdAt: new Date().toISOString(),
+        status: 'pending'
+      }
+    };
 
-  await docClient.send(new PutCommand(params));
-  return params.Item;
+    await docClient.send(new PutCommand(params));
+    
+    // Track order metrics
+    trackOrder(params.Item);
+    
+    return params.Item;
+  });
 };
 
 export const getAllOrders = async () => {

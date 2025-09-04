@@ -1,4 +1,0 @@
-# Infrastructure deployment trigger
-# This file triggers the infrastructure pipeline to deploy Lambda function and event source mapping
-# Timestamp: 2025-08-30T23:12:00Z
-# Purpose: Fix DynamoDB stream → Lambda → BigQuery connection

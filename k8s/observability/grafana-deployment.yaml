@@ -43,8 +43,14 @@ spec:
         - name: GF_INSTALL_PLUGINS
           value: "grafana-piechart-panel,grafana-worldmap-panel,grafana-clock-panel"
         - name: GF_SERVER_ROOT_URL
-          value: "%(protocol)s://%(domain)s:%(http_port)s/grafana/"
+          value: "https://monitoring.cloudmartsaid.shop/grafana/"
         - name: GF_SERVER_SERVE_FROM_SUB_PATH
+          value: "true"
+        - name: GF_SERVER_DOMAIN
+          value: "monitoring.cloudmartsaid.shop"
+        - name: GF_SERVER_PROTOCOL
+          value: "https"
+        - name: GF_SERVER_ENFORCE_DOMAIN
           value: "true"
         volumeMounts:
         - name: grafana-storage

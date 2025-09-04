@@ -1,0 +1,180 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  ai-services-dashboard.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "CloudMart AI Services",
+        "tags": ["ai", "cloudmart"],
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "AI Request Duration",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, rate(ai_request_duration_seconds_bucket[5m]))",
+                "legendFormat": "95th percentile - {{service}}"
+              }
+            ],
+            "yAxes": [{"label": "Seconds"}],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+          },
+          {
+            "id": 2,
+            "title": "AI Requests per Second",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(ai_requests_total[5m])",
+                "legendFormat": "{{service}} - {{status}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+          },
+          {
+            "id": 3,
+            "title": "AI Token Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(ai_tokens_used_total[5m])",
+                "legendFormat": "{{service}} - {{model}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+          },
+          {
+            "id": 4,
+            "title": "AI Service Costs",
+            "type": "singlestat",
+            "targets": [
+              {
+                "expr": "sum(ai_cost_total)",
+                "legendFormat": "Total Cost ($)"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+          }
+        ],
+        "time": {"from": "now-1h", "to": "now"},
+        "refresh": "30s"
+      }
+    }
+  
+  business-metrics-dashboard.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "CloudMart Business Metrics",
+        "tags": ["business", "cloudmart"],
+        "panels": [
+          {
+            "id": 1,
+            "title": "Orders per Hour",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(orders_total[1h])",
+                "legendFormat": "{{status}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+          },
+          {
+            "id": 2,
+            "title": "Customer Satisfaction",
+            "type": "gauge",
+            "targets": [
+              {
+                "expr": "customer_satisfaction_score",
+                "legendFormat": "{{category}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+          },
+          {
+            "id": 3,
+            "title": "HTTP Response Times",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+                "legendFormat": "95th percentile"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8}
+          }
+        ],
+        "time": {"from": "now-6h", "to": "now"},
+        "refresh": "1m"
+      }
+    }
+  
+  database-dashboard.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "CloudMart Database Performance",
+        "tags": ["database", "dynamodb"],
+        "panels": [
+          {
+            "id": 1,
+            "title": "Database Operation Duration",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, rate(database_operation_duration_seconds_bucket[5m]))",
+                "legendFormat": "{{operation}} - {{table}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+          },
+          {
+            "id": 2,
+            "title": "Database Errors",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(database_errors_total[5m])",
+                "legendFormat": "{{error_type}} - {{table}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+          },
+          {
+            "id": 3,
+            "title": "DynamoDB Read Capacity",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "aws_dynamodb_consumed_read_capacity_units_sum",
+                "legendFormat": "{{table_name}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+          },
+          {
+            "id": 4,
+            "title": "DynamoDB Write Capacity",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "aws_dynamodb_consumed_write_capacity_units_sum",
+                "legendFormat": "{{table_name}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+          }
+        ],
+        "time": {"from": "now-1h", "to": "now"},
+        "refresh": "30s"
+      }
+    }

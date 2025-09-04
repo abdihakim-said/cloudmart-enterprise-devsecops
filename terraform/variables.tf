@@ -151,7 +151,7 @@ variable "domain_name" {
 variable "subject_alternative_names" {
   description = "Additional domain names for the certificate"
   type        = list(string)
-  default     = ["*.cloudmart.example.com", "api.cloudmart.example.com"]
+  default     = ["*.cloudmart.example.com", "api.cloudmart.example.com", "monitoring.cloudmartsaid.shop"]
 }
 
 variable "route53_zone_id" {

@@ -115,6 +115,10 @@ metadata:
   namespace: default
   labels:
     app: cloudmart-backend
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "5000"
+    prometheus.io/path: "/metrics"
 spec:
   type: ClusterIP
   ports:

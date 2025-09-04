@@ -2,17 +2,27 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: grafana-ingress
+  name: cloudmart-monitoring-ingress
   namespace: monitoring
   annotations:
+    kubernetes.io/ingress.class: alb
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:682881510910:certificate/ad92019b-22d3-4bde-abf1-2909a68d9c4e
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
     alb.ingress.kubernetes.io/healthcheck-path: /api/health
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    alb.ingress.kubernetes.io/load-balancer-attributes: |
+      idle_timeout.timeout_seconds=60,
+      routing.http2.enabled=true
+    alb.ingress.kubernetes.io/tags: |
+      Environment=production,
+      Project=CloudMart-Monitoring,
+      ManagedBy=Kubernetes
 spec:
-  ingressClassName: alb
   rules:
-  - http:
+  - host: monitoring.cloudmartsaid.shop
+    http:
       paths:
       - path: /grafana
         pathType: Prefix

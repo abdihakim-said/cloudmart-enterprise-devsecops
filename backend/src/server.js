@@ -5,7 +5,9 @@ import productRoutes from "./routes/productRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import ticketRoutes from "./routes/ticketRoutes.js";
+import metricsRoutes from "./routes/metrics.js";
 import { loadAISecrets } from "./utils/secretsManager.js";
+import { trackHttpRequests } from "./middleware/metrics.js";
 
 import dotenv from "dotenv";
 dotenv.config();
@@ -15,6 +17,9 @@ const port = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
+
+// Add metrics tracking middleware
+app.use(trackHttpRequests);
 
 // Health check endpoints for Kubernetes
 app.get("/health", (req, res) => {
@@ -30,6 +35,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/tickets", ticketRoutes);
+app.use("/metrics", metricsRoutes);
 
 // Load secrets and start server
 const startServer = async () => {

@@ -55,6 +55,13 @@ curl -X POST https://app.cloudmartsaid.shop/api/ai/analyze-sentiment -d '{"threa
 - **Runtime Protection**: Falco security monitoring
 - **Enterprise SSL/TLS**: TLS 1.3 with trusted CA certificates
 
+### **📊 Enterprise Observability**
+- **38 Metrics Instrumented**: 11 AI + 27 infrastructure + custom business metrics
+- **Real-time Cost Tracking**: $1.30-$1.62 AI session monitoring with alerts
+- **Production Incident Response**: 3 AM cost explosion caught and resolved in <15 min
+- **Business Intelligence**: 95% customer satisfaction via AI sentiment analysis
+- **Complete Documentation**: [📊 View Full Observability Stack](./OBSERVABILITY.md)
+
 ---
 
 ## 🏗️ **Architecture Overview**
@@ -163,6 +170,13 @@ curl -X POST https://app.cloudmartsaid.shop/api/ai/analyze-sentiment -d '{"threa
 - **Zero Critical Vulnerabilities**: Continuous security validation
 - **Runtime Protection**: Falco security monitoring
 - **Enterprise SSL/TLS**: TLS 1.3 with trusted CA certificates
+
+### **📊 Enterprise Observability**
+- **38 Metrics Instrumented**: 11 AI + 27 infrastructure + custom business metrics
+- **Real-time Cost Tracking**: $1.30-$1.62 AI session monitoring with alerts
+- **Production Incident Response**: 3 AM cost explosion caught and resolved in <15 min
+- **Business Intelligence**: 95% customer satisfaction via AI sentiment analysis
+- **Complete Documentation**: [📊 View Full Observability Stack](./OBSERVABILITY.md)
 
 ---
 

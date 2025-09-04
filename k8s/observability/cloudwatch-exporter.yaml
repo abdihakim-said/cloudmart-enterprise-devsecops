@@ -1,0 +1,188 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudwatch-exporter-config
+  namespace: monitoring
+data:
+  config.yml: |
+    region: us-east-1
+    metrics:
+    # DynamoDB Metrics
+    - aws_namespace: AWS/DynamoDB
+      aws_metric_name: ConsumedReadCapacityUnits
+      aws_dimensions: [TableName]
+      aws_statistics: [Sum]
+      
+    - aws_namespace: AWS/DynamoDB
+      aws_metric_name: ConsumedWriteCapacityUnits
+      aws_dimensions: [TableName]
+      aws_statistics: [Sum]
+      
+    - aws_namespace: AWS/DynamoDB
+      aws_metric_name: SuccessfulRequestLatency
+      aws_dimensions: [TableName, Operation]
+      aws_statistics: [Average]
+      
+    - aws_namespace: AWS/DynamoDB
+      aws_metric_name: ThrottledRequests
+      aws_dimensions: [TableName, Operation]
+      aws_statistics: [Sum]
+      
+    - aws_namespace: AWS/DynamoDB
+      aws_metric_name: UserErrors
+      aws_dimensions: [TableName]
+      aws_statistics: [Sum]
+      
+    - aws_namespace: AWS/DynamoDB
+      aws_metric_name: SystemErrors
+      aws_dimensions: [TableName]
+      aws_statistics: [Sum]
+    
+    # Lambda Metrics (for BigQuery integration)
+    - aws_namespace: AWS/Lambda
+      aws_metric_name: Duration
+      aws_dimensions: [FunctionName]
+      aws_statistics: [Average, Maximum]
+      
+    - aws_namespace: AWS/Lambda
+      aws_metric_name: Errors
+      aws_dimensions: [FunctionName]
+      aws_statistics: [Sum]
+      
+    - aws_namespace: AWS/Lambda
+      aws_metric_name: Invocations
+      aws_dimensions: [FunctionName]
+      aws_statistics: [Sum]
+    
+    # Application Load Balancer
+    - aws_namespace: AWS/ApplicationELB
+      aws_metric_name: RequestCount
+      aws_dimensions: [LoadBalancer]
+      aws_statistics: [Sum]
+      
+    - aws_namespace: AWS/ApplicationELB
+      aws_metric_name: TargetResponseTime
+      aws_dimensions: [LoadBalancer]
+      aws_statistics: [Average]
+      
+    - aws_namespace: AWS/ApplicationELB
+      aws_metric_name: HTTPCode_Target_2XX_Count
+      aws_dimensions: [LoadBalancer]
+      aws_statistics: [Sum]
+      
+    - aws_namespace: AWS/ApplicationELB
+      aws_metric_name: HTTPCode_Target_4XX_Count
+      aws_dimensions: [LoadBalancer]
+      aws_statistics: [Sum]
+      
+    - aws_namespace: AWS/ApplicationELB
+      aws_metric_name: HTTPCode_Target_5XX_Count
+      aws_dimensions: [LoadBalancer]
+      aws_statistics: [Sum]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudwatch-exporter
+  namespace: monitoring
+  labels:
+    app: cloudwatch-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloudwatch-exporter
+  template:
+    metadata:
+      labels:
+        app: cloudwatch-exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9106"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: cloudwatch-exporter
+      containers:
+      - name: cloudwatch-exporter
+        image: prom/cloudwatch-exporter:v0.15.5
+        ports:
+        - containerPort: 9106
+        args:
+        - '/config/config.yml'
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        env:
+        - name: AWS_REGION
+          value: "us-east-1"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /metrics
+            port: 9106
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /metrics
+            port: 9106
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      volumes:
+      - name: config
+        configMap:
+          name: cloudwatch-exporter-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloudwatch-exporter
+  namespace: monitoring
+  labels:
+    app: cloudwatch-exporter
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9106"
+spec:
+  selector:
+    app: cloudwatch-exporter
+  ports:
+  - port: 9106
+    targetPort: 9106
+    name: metrics
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cloudwatch-exporter
+  namespace: monitoring
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/cloudwatch-exporter-role
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cloudwatch-exporter
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cloudwatch-exporter
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cloudwatch-exporter
+subjects:
+- kind: ServiceAccount
+  name: cloudwatch-exporter
+  namespace: monitoring
