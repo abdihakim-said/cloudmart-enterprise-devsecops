@@ -14,11 +14,11 @@
 
 ---
 
-## 🏆 **Live Production Environment**
+## 🏆 **Production Environment (Demo Infra Decommissioned)**
 
 ### **🌐 Application URLs**
-- **🔒 Production HTTPS**: [`https://app.cloudmartsaid.shop`](https://app.cloudmartsaid.shop) (Trusted CA Certificate)
-- **📊 Monitoring Dashboard**: [Grafana Metrics](http://k8s-monitori-grafanai-972f2a0250-868196757.us-east-1.elb.amazonaws.com/grafana/) (admin/cloudmart123)
+- **🔒 Production HTTPS**: `https://app.cloudmartsaid.shop` (no longer live — see screenshots below)
+- **📊 Monitoring Dashboard**: Grafana metrics dashboard, credentials available on request (previous demo password has been rotated out of this README)
 
 ### **📸 Live Application**
 ![CloudMart Live Application](./screenshots/live-application.png)
@@ -130,11 +130,11 @@ curl -X POST https://app.cloudmartsaid.shop/api/ai/analyze-sentiment -d '{"threa
 
 ---
 
-## 🏆 **Live Production Environment**
+## 🏆 **Production Environment (Demo Infra Decommissioned)**
 
 ### **🌐 Application URLs**
-- **🔒 Production HTTPS**: [`https://app.cloudmartsaid.shop`](https://app.cloudmartsaid.shop) (Trusted CA Certificate)
-- **📊 Monitoring Dashboard**: [Grafana Metrics](http://k8s-monitori-grafanai-972f2a0250-868196757.us-east-1.elb.amazonaws.com/grafana/) (admin/cloudmart123)
+- **🔒 Production HTTPS**: `https://app.cloudmartsaid.shop` (no longer live — see screenshots below)
+- **📊 Monitoring Dashboard**: Grafana metrics dashboard, credentials available on request (previous demo password has been rotated out of this README)
 
 ### **📸 Live Application**
 ![CloudMart Live Application](./screenshots/live-application.png)
