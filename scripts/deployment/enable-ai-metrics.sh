@@ -8,7 +8,7 @@ kubectl exec -n default deployment/cloudmart-backend -- cp /app/src/controllers/
 
 # Copy the updated controller with metrics
 echo "🔄 Updating AI controller with metrics tracking..."
-kubectl cp /Users/abdihakimsaid/sandbox/cloudmart-project/backend/src/controllers/aiController-with-metrics.js default/$(kubectl get pods -n default -l app=cloudmart-backend -o jsonpath='{.items[0].metadata.name}'):/app/src/controllers/aiController.js
+kubectl cp backend/src/controllers/aiController-with-metrics.js default/$(kubectl get pods -n default -l app=cloudmart-backend -o jsonpath='{.items[0].metadata.name}'):/app/src/controllers/aiController.js
 
 # Restart backend pods to apply changes
 echo "🔄 Restarting backend pods..."

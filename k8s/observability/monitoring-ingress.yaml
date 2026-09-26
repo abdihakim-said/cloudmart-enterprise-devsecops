@@ -12,7 +12,7 @@ metadata:
     alb.ingress.kubernetes.io/ip-address-type: ipv4
     
     # HTTPS Configuration
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:682881510910:certificate/210210a5-b6b3-458d-8ee7-a558af998ee1
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:<AWS_ACCOUNT_ID>:certificate/210210a5-b6b3-458d-8ee7-a558af998ee1
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
     alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
     alb.ingress.kubernetes.io/ssl-redirect: "443"

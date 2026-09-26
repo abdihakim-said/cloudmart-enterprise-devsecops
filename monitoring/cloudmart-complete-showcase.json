@@ -707,7 +707,7 @@
   ],
   "schemaVersion": 27,
   "style": "dark",
-  "tags": ["cloudmart", "production", "ai", "showcase", "interview"],
+  "tags": ["cloudmart", "ai", "observability"],
   "templating": {"list": []},
   "time": {"from": "now-5m", "to": "now"},
   "timepicker": {},

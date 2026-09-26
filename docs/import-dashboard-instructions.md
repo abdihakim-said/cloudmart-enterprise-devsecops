@@ -16,7 +16,7 @@
 1. **Go to Grafana**: https://monitoring.cloudmartsaid.shop/grafana/
 2. **Login**: admin / cloudmart123
 3. **Click**: + → Import
-4. **Upload JSON file**: `/Users/abdihakimsaid/sandbox/cloudmart-project/monitoring/cloudmart-complete-dashboard.json`
+4. **Upload JSON file**: `monitoring/cloudmart-complete-showcase.json`
 5. **Click**: Load
 6. **Click**: Import
 

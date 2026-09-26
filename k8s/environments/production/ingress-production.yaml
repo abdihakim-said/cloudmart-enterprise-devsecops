@@ -16,14 +16,14 @@ metadata:
     alb.ingress.kubernetes.io/ip-address-type: ipv4
     
     # ✅ VERIFIED ACM Certificate Configuration
-    # Certificate ARN: arn:aws:acm:us-east-1:682881510910:certificate/ad92019b-22d3-4bde-abf1-2909a68d9c4e
+    # Certificate ARN: arn:aws:acm:us-east-1:<AWS_ACCOUNT_ID>:certificate/ad92019b-22d3-4bde-abf1-2909a68d9c4e
     # Domain: app.cloudmartsaid.shop
     # Status: ISSUED ✅
     # Issuer: Amazon (Trusted CA) ✅
     # Valid: 2025-08-30 to 2026-09-29 ✅
     # In Use By: k8s-default-cloudmar-4d66794f32 ALB ✅
     # Serial: 07:70:56:e9:83:87:d2:29:b8:b2:3c:94:9e:b2:9a:89
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:682881510910:certificate/ad92019b-22d3-4bde-abf1-2909a68d9c4e
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:<AWS_ACCOUNT_ID>:certificate/ad92019b-22d3-4bde-abf1-2909a68d9c4e
     
     # HTTPS Configuration
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
@@ -89,8 +89,8 @@ metadata:
       }
     
     # ✅ VERIFIED WAF Protection
-    # WAF ARN: arn:aws:wafv2:us-east-1:682881510910:regional/webacl/cloudmart-production-waf/702bcc26-61ac-44ea-b135-ffa338575a14
-    alb.ingress.kubernetes.io/wafv2-acl-arn: arn:aws:wafv2:us-east-1:682881510910:regional/webacl/cloudmart-production-waf/702bcc26-61ac-44ea-b135-ffa338575a14
+    # WAF ARN: arn:aws:wafv2:us-east-1:<AWS_ACCOUNT_ID>:regional/webacl/cloudmart-production-waf/702bcc26-61ac-44ea-b135-ffa338575a14
+    alb.ingress.kubernetes.io/wafv2-acl-arn: arn:aws:wafv2:us-east-1:<AWS_ACCOUNT_ID>:regional/webacl/cloudmart-production-waf/702bcc26-61ac-44ea-b135-ffa338575a14
     
     # Resource Tags
     alb.ingress.kubernetes.io/tags: |
@@ -162,14 +162,14 @@ spec:
 # ✅ VERIFIED RUNNING DOCKER IMAGES:
 
 # Backend Service (3 replicas):
-# - Image: 682881510910.dkr.ecr.us-east-1.amazonaws.com/cloudmart-backend:v3-sdk-fixed
+# - Image: <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/cloudmart-backend:v3-sdk-fixed
 # - Dockerfile: /backend/Dockerfile
 # - Base Image: node:18
 # - Port: 5000
 # - Features: Node.js API, AWS SDK, OpenAI integration, Bedrock integration
 
 # Frontend Service (3 replicas):
-# - Image: 682881510910.dkr.ecr.us-east-1.amazonaws.com/cloudmart-frontend:v5-openai-fix
+# - Image: <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/cloudmart-frontend:v5-openai-fix
 # - Dockerfile: /frontend/Dockerfile (Multi-stage build)
 # - Base Image: node:18-alpine (production stage)
 # - Port: 80
@@ -179,7 +179,7 @@ spec:
 # ✅ VERIFIED DEPLOYED RESOURCES:
 
 # 1. ACM Certificate:
-#    - ARN: arn:aws:acm:us-east-1:682881510910:certificate/ad92019b-22d3-4bde-abf1-2909a68d9c4e
+#    - ARN: arn:aws:acm:us-east-1:<AWS_ACCOUNT_ID>:certificate/ad92019b-22d3-4bde-abf1-2909a68d9c4e
 #    - Domain: app.cloudmartsaid.shop
 #    - Status: ISSUED ✅
 #    - Validation: DNS (SUCCESS) ✅

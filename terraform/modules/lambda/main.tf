@@ -62,7 +62,7 @@ resource "aws_iam_role_policy" "lambda_policy" {
           "arn:aws:bedrock:*:*:foundation-model/*",
           aws_sqs_queue.lambda_dlq.arn,
           var.azure_secret_arn,
-          "arn:aws:secretsmanager:us-east-1:682881510910:secret:cloudmart/production/gcp/bigquery-credentials-*"
+          "arn:aws:secretsmanager:us-east-1:${data.aws_caller_identity.current.account_id}:secret:cloudmart/production/gcp/bigquery-credentials-*"
         ]
       }
     ]
@@ -328,3 +328,5 @@ resource "aws_lambda_permission" "allow_bedrock" {
   function_name = aws_lambda_function.list_products.function_name
   principal     = "bedrock.amazonaws.com"
 }
+
+data "aws_caller_identity" "current" {}

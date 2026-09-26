@@ -1,517 +1,100 @@
-# 🚀 CloudMart - Enterprise DevSecOps Platform
+# CloudMart: Multi-Cloud AI E-Commerce on AWS EKS
 
-<div align="center">
-  <img src="https://img.shields.io/badge/AWS-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white" alt="AWS"/>
-  <img src="https://img.shields.io/badge/Kubernetes-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white" alt="Kubernetes"/>
-  <img src="https://img.shields.io/badge/Terraform-623CE4?style=for-the-badge&logo=terraform&logoColor=white" alt="Terraform"/>
-  <img src="https://img.shields.io/badge/Security-First-red?style=for-the-badge" alt="Security"/>
-</div>
+An e-commerce app on **Amazon EKS** with AI features from three clouds: an OpenAI assistant, an Amazon Bedrock agent, and Azure sentiment analysis on support tickets. Orders stream from DynamoDB to Google BigQuery for analytics. Everything is provisioned with Terraform and shipped through security-gated CI/CD.
 
-<div align="center">
-  <h3>🎯 Production-Ready Multi-Cloud E-Commerce Platform</h3>
-  <p><em>Demonstrating enterprise-grade DevSecOps, security automation, and cloud architecture</em></p>
-</div>
+> **Portfolio build, decommissioned.** The application and base architecture come from the public **Multicloud DevOps & AI Challenge** (reference diagram below). I built and ran it in my own AWS, Azure and GCP accounts in August–September 2025, then extended it with the DevSecOps pipelines, security controls and observability described here. It was never used by real customers. The dashboard traffic came from a load-generator script, and the infrastructure has since been torn down.
+
+![CloudMart running at app.cloudmartsaid.shop](./screenshots/live-application.png)
 
 ---
 
-## 🏆 **Production Environment (Demo Infra Decommissioned)**
+## 1. Problem
 
-### **🌐 Application URLs**
-- **🔒 Production HTTPS**: `https://app.cloudmartsaid.shop` (no longer live — see screenshots below)
-- **📊 Monitoring Dashboard**: Grafana metrics dashboard, credentials available on request (previous demo password has been rotated out of this README)
+A typical product team wants AI features (a shopping assistant, ticket triage, analytics) without running models itself, and without giving up control of security and cost. This project answers: what does it take to run a containerised app on EKS that calls AI services across three clouds, and keep every change scanned, every secret out of the repo, and every AI call measurable?
 
-### **📸 Live Application**
-![CloudMart Live Application](./screenshots/live-application.png)
-*Production e-commerce platform processing real orders with AI-powered features*
+## 2. Architecture
 
-### **🤖 AI Services Integration**
+**Challenge reference architecture** (the starting point):
+
+![Challenge architecture](./screenshots/CHALLENGE-ARCHITECTURE.png)
+
+**What I added on top:**
+
+```mermaid
+flowchart LR
+  Dev[git push] --> GA[GitHub Actions<br/>app + infra pipelines]
+  Dev --> CP[CodePipeline / CodeBuild]
+  GA --> SEC{Security gate<br/>7 scanners, Python gate}
+  CP --> SEC
+  SEC --> ECR[(ECR)]
+  SEC --> TF[Terraform plan → approval → apply]
+  ECR --> EKS
+  subgraph EKS["EKS 1.28 · private + public endpoint · KMS-encrypted secrets"]
+    FE[React frontend] --> BE[Node.js backend<br/>IRSA pod role]
+    NP[NetworkPolicies] -.-> BE
+    PR[Prometheus + Grafana<br/>AI + business metrics] --> BE
+  end
+  ALB[ALB + ACM TLS + WAF] --> FE
+  BE --> DDB[(DynamoDB)] -->|stream| L[Lambda] --> BQ[(BigQuery)]
+  BE --> OAI[OpenAI Assistants] & BR[Bedrock Agent] & AZ[Azure Text Analytics]
+  BE --> SM[Secrets Manager]
+```
+
+| Area | Where |
+|---|---|
+| Terraform (15 modules, 9 wired into the root) | `terraform/modules/`: eks (incl. VPC), dynamodb, lambda, acm, waf, azure, gcp, cicd, iac-cicd are composed in `terraform/main.tf`; networking, ecr, database, security, monitoring, observability are standalone |
+| App | `backend/` (Node.js/Express), `frontend/` (React/Vite), `backend/src/lambda/` |
+| Kubernetes | `k8s/base`, `k8s/environments/{development,staging,production}`, `k8s/infrastructure` (ALB controller SA, NetworkPolicies, WAF) |
+| Pipelines | `.github/workflows/devsecops-{application,infrastructure}.yml`, `ci-cd/buildspecs/*.yml` |
+| Security | `ci-cd/buildspecs/buildspec-security.yml`, `security/falco-rules.yaml`, `security/k8s/`, `config/.checkov.yml`, `.tfsec.yml`, `.semgrepignore` |
+| Observability | `k8s/observability/` (Prometheus, Grafana, node-exporter, CloudWatch exporter), `backend/src/middleware/metrics.js`, `monitoring/*.json` dashboards |
+
+## 3. Key decisions and trade-offs
+
+- **The security gate is code, not a checklist.** `buildspec-security.yml` runs 7 scanners: gitleaks, Semgrep, Bandit, npm audit/retire.js, Safety, Checkov and Trivy. A Python step then parses their JSON output and fails the build on leaked secrets, Semgrep errors, CRITICAL image CVEs or HIGH Checkov findings. Bandit, npm audit and Safety are report-only, which keeps the gate focused on findings that need a human now.
+- **Pods get AWS access through IRSA, not node roles.** The backend's service account assumes a scoped role for DynamoDB, Secrets Manager and Bedrock. Third-party API keys live in Secrets Manager.
+- **EKS hardening basics:** secrets are envelope-encrypted with a KMS key, all five control-plane log types are enabled, the private endpoint is on, and the EBS CSI driver runs with its own IRSA role.
+- **Edge:** ALB with an ACM certificate and a WAF web ACL in front of the frontend.
+- **Event-driven analytics instead of querying the app database.** A DynamoDB stream triggers a Lambda that writes orders to BigQuery, so analytics never touches the transactional table.
+- **AI calls are instrumented like any dependency.** Request count, latency and estimated cost per AI provider are exported as Prometheus metrics and graphed in Grafana.
+
+## 4. Known limitations / what I'd do next
+
+- **The EKS public endpoint is open** (`endpoint_public_access = true` with no CIDR restriction). Next: restrict it to CI/admin CIDRs, or use private-only access with a bastion/SSM.
+- **CI uses long-lived AWS access keys.** Next: GitHub OIDC with per-pipeline roles.
+- **Scanner installs pipe remote scripts from `main` into bash** (Trivy, gitleaks). Next: pin versions and verify checksums, since the pipeline is itself supply-chain surface.
+- **The EKS addon uses the deprecated `resolve_conflicts`**, and the cluster version (1.28) is out of standard support. Next: move to `resolve_conflicts_on_*` and upgrade.
+- **The security gate fails open.** If a scanner crashes and writes no report, the Python gate counts it as a pass. Next: treat a missing report as a failure.
+- **Two NetworkPolicy files overlap** (`k8s/infrastructure/` and `security/k8s/`), and the PodSecurityPolicy manifest targets an API removed in Kubernetes 1.25. Next: consolidate, and move to Pod Security Admission.
+- **The Grafana/Prometheus stack runs as plain manifests.** Next: kube-prometheus-stack via Helm/ArgoCD for upgrades and HA.
+- **The last CI runs failed** (Sept 2025) after the infrastructure was removed; the earlier successful run is shown below.
+
+## 5. Evidence
+
+| | |
+|---|---|
+| ![Pipeline](./screenshots/security-pipeline.png) | Application pipeline run #21: security scanning → build & test → deploy to EKS → compliance report, all green |
+| ![Targets](./screenshots/aws-healthy-targets.png) | ALB target groups healthy |
+| ![BigQuery](./screenshots/bigquery-data.png) | Orders arriving in BigQuery through the DynamoDB stream → Lambda path |
+| ![Sentiment](./screenshots/support-sentiment.png) | Azure sentiment analysis on support tickets |
+
+## 6. Run it yourself
+
+Prerequisites: AWS account, Azure subscription (Text Analytics), GCP project (BigQuery), OpenAI API key and assistant, Bedrock agent, Terraform ≥ 1.5, kubectl, Docker.
+
 ```bash
-# OpenAI GPT-4 Assistant
-curl -X POST https://app.cloudmartsaid.shop/api/ai/start -d '{"message":"Hello"}'
+cp terraform/terraform.tfvars.example terraform/terraform.tfvars   # fill in your values
+cd terraform
+terraform init      # edit the S3 backend block in main.tf to your own state bucket first
+terraform plan && terraform apply
 
-# AWS Bedrock Agent
-curl -X POST https://app.cloudmartsaid.shop/api/ai/bedrock/start -d '{"message":"What products do you sell?"}'
-
-# Azure Sentiment Analysis
-curl -X POST https://app.cloudmartsaid.shop/api/ai/analyze-sentiment -d '{"thread":{"messages":[{"text":"Great product!","sender":"user"}]}}'
+aws eks update-kubeconfig --name <cluster-name> --region us-east-1
+# Replace <AWS_ACCOUNT_ID> placeholders in k8s/ with your account, then:
+kubectl apply -f k8s/infrastructure/ -f k8s/base/ -f k8s/observability/
 ```
 
----
-
-## 🎯 **Key Achievements**
-
-### **🚀 DevSecOps Excellence**
-| **Metric** | **Achievement** | **Industry Standard** | **Status** |
-|------------|-----------------|----------------------|------------|
-| **Pipeline Success Rate** | **95%+** | 85% | 🟢 Exceeds |
-| **Deployment Frequency** | **Multiple/Day** | Weekly | 🟢 Exceeds |
-| **Lead Time** | **<30 min** | 2-4 hours | 🟢 Exceeds |
-| **MTTR** | **<15 min** | 1-2 hours | 🟢 Exceeds |
-| **Security Coverage** | **100%** | 60% manual | 🟢 Exceeds |
-
-### **🛡️ Security-First Architecture**
-- **130+ Security Checks**: Automated scanning with GitLeaks, Semgrep, Trivy, Checkov
-- **Zero Critical Vulnerabilities**: Continuous security validation
-- **Runtime Protection**: Falco security monitoring
-- **Enterprise SSL/TLS**: TLS 1.3 with trusted CA certificates
-
-### **📊 Enterprise Observability**
-- **38 Metrics Instrumented**: 11 AI + 27 infrastructure + custom business metrics
-- **Real-time Cost Tracking**: $1.30-$1.62 AI session monitoring with alerts
-- **Production Incident Response**: 3 AM cost explosion caught and resolved in <15 min
-- **Business Intelligence**: 95% customer satisfaction via AI sentiment analysis
-- **Complete Documentation**: [📊 View Full Observability Stack](./OBSERVABILITY.md)
+**Cost:** roughly **$250–350/month** while running in us-east-1. The main costs are the EKS control plane (~$73), 2× t3.medium nodes, NAT gateway, ALB and WAF, plus usage-based AI API calls. **Run `terraform destroy` when you're done.**
 
 ---
 
-## 🏗️ **Architecture Overview**
-
-### **Multi-Cloud Strategy**
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│      AWS        │    │     Azure       │    │      GCP        │
-│ • EKS Cluster   │    │ • AI Language   │    │ • BigQuery      │
-│ • DynamoDB      │    │ • Sentiment     │    │ • Analytics     │
-│ • Lambda        │    │ • Analysis      │    │ • Data Studio   │
-│ • Bedrock AI    │    │                 │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
-
-### **🏗️ System Architecture**
-![Multi-Cloud Architecture](./screenshots/cloudmart-aws-architecture.png)
-*Enterprise-grade multi-cloud architecture spanning AWS, Azure, and GCP*
-### **🎯 Technical Challenge Architecture**
-![Challenge Architecture](./screenshots/CHALLENGE-ARCHITECTURE.png)
-*Detailed technical implementation and problem-solving approach*
-
-### **DevSecOps Pipeline**
-```
-🔒 Security Scan → 🏗️ Build & Test → 🚀 Deploy → 🏥 Health Check → ✅ Success
-   (4 tools)        (Multi-stage)     (EKS)      (Automated)      (95%+)
-```
-
-
----
-
-## 🔧 **Technology Stack**
-
-### **Infrastructure & Platform**
-- **AWS**: EKS, DynamoDB, Lambda, ALB, ECR, ACM, Secrets Manager
-- **Azure**: Cognitive Services (Text Analytics)
-- **GCP**: BigQuery, Data Studio
-- **Kubernetes**: Container orchestration with security policies
-- **Terraform**: Infrastructure as Code with compliance validation
-
-### **Application Stack**
-- **Frontend**: React + Vite + Nginx (Multi-stage Docker build)
-- **Backend**: Node.js + Express + AWS SDK v3
-- **AI Integration**: OpenAI GPT-4, AWS Bedrock, Azure AI
-- **Databases**: DynamoDB (NoSQL), BigQuery (Analytics)
-
-### **Security & Monitoring**
-- **Security Tools**: GitLeaks, Semgrep, Trivy, Checkov, Falco
-- **Monitoring**: Prometheus + Grafana + AlertManager
-- **Observability**: Custom dashboards, SLI/SLO tracking
-- **Compliance**: SOC 2 ready, audit trails, policy as code
-
----# 🚀 CloudMart - Enterprise DevSecOps Platform
-
-<div align="center">
-  <img src="https://img.shields.io/badge/AWS-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white" alt="AWS"/>
-  <img src="https://img.shields.io/badge/Kubernetes-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white" alt="Kubernetes"/>
-  <img src="https://img.shields.io/badge/Terraform-623CE4?style=for-the-badge&logo=terraform&logoColor=white" alt="Terraform"/>
-  <img src="https://img.shields.io/badge/Security-First-red?style=for-the-badge" alt="Security"/>
-</div>
-
-<div align="center">
-  <h3>🎯 Production-Ready Multi-Cloud E-Commerce Platform</h3>
-  <p><em>Demonstrating enterprise-grade DevSecOps, security automation, and cloud architecture</em></p>
-</div>
-
----
-
-## 🏆 **Production Environment (Demo Infra Decommissioned)**
-
-### **🌐 Application URLs**
-- **🔒 Production HTTPS**: `https://app.cloudmartsaid.shop` (no longer live — see screenshots below)
-- **📊 Monitoring Dashboard**: Grafana metrics dashboard, credentials available on request (previous demo password has been rotated out of this README)
-
-### **📸 Live Application**
-![CloudMart Live Application](./screenshots/live-application.png)
-*Production e-commerce platform processing real orders with AI-powered features*
-
-### **🤖 AI Services Integration**
-```bash
-# OpenAI GPT-4 Assistant
-curl -X POST https://app.cloudmartsaid.shop/api/ai/start -d '{"message":"Hello"}'
-
-# AWS Bedrock Agent
-curl -X POST https://app.cloudmartsaid.shop/api/ai/bedrock/start -d '{"message":"What products do you sell?"}'
-
-# Azure Sentiment Analysis
-curl -X POST https://app.cloudmartsaid.shop/api/ai/analyze-sentiment -d '{"thread":{"messages":[{"text":"Great product!","sender":"user"}]}}'
-```
-
----
-
-## 🎯 **Key Achievements**
-
-### **🚀 DevSecOps Excellence**
-| **Metric** | **Achievement** | **Industry Standard** | **Status** |
-|------------|-----------------|----------------------|------------|
-| **Pipeline Success Rate** | **95%+** | 85% | 🟢 Exceeds |
-| **Deployment Frequency** | **Multiple/Day** | Weekly | 🟢 Exceeds |
-| **Lead Time** | **<30 min** | 2-4 hours | 🟢 Exceeds |
-| **MTTR** | **<15 min** | 1-2 hours | 🟢 Exceeds |
-| **Security Coverage** | **100%** | 60% manual | 🟢 Exceeds |
-
-### **🛡️ Security-First Architecture**
-- **130+ Security Checks**: Automated scanning with GitLeaks, Semgrep, Trivy, Checkov
-- **Zero Critical Vulnerabilities**: Continuous security validation
-- **Runtime Protection**: Falco security monitoring
-- **Enterprise SSL/TLS**: TLS 1.3 with trusted CA certificates
-
-### **📊 Enterprise Observability**
-- **38 Metrics Instrumented**: 11 AI + 27 infrastructure + custom business metrics
-- **Real-time Cost Tracking**: $1.30-$1.62 AI session monitoring with alerts
-- **Production Incident Response**: 3 AM cost explosion caught and resolved in <15 min
-- **Business Intelligence**: 95% customer satisfaction via AI sentiment analysis
-- **Complete Documentation**: [📊 View Full Observability Stack](./OBSERVABILITY.md)
-
----
-
-## 🏗️ **Architecture Overview**
-
-### **Multi-Cloud Strategy**
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│      AWS        │    │     Azure       │    │      GCP        │
-│ • EKS Cluster   │    │ • AI Language   │    │ • BigQuery      │
-│ • DynamoDB      │    │ • Sentiment     │    │ • Analytics     │
-│ • Lambda        │    │ • Analysis      │    │ • Data Studio   │
-│ • Bedrock AI    │    │                 │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
-
-### **🏗️ System Architecture**
-![Multi-Cloud Architecture](./screenshots/cloudmart-architecture.png)
-*Enterprise-grade multi-cloud architecture spanning AWS, Azure, and GCP*
-
-### **DevSecOps Pipeline**
-```
-🔒 Security Scan → 🏗️ Build & Test → 🚀 Deploy → 🏥 Health Check → ✅ Success
-   (4 tools)        (Multi-stage)     (EKS)      (Automated)      (95%+)
-```
-
-
----
-
-## 🔧 **Technology Stack**
-
-### **Infrastructure & Platform**
-- **AWS**: EKS, DynamoDB, Lambda, ALB, ECR, ACM, Secrets Manager
-- **Azure**: Cognitive Services (Text Analytics)
-- **GCP**: BigQuery, Data Studio
-- **Kubernetes**: Container orchestration with security policies
-- **Terraform**: Infrastructure as Code with compliance validation
-
-### **Application Stack**
-- **Frontend**: React + Vite + Nginx (Multi-stage Docker build)
-- **Backend**: Node.js + Express + AWS SDK v3
-- **AI Integration**: OpenAI GPT-4, AWS Bedrock, Azure AI
-- **Databases**: DynamoDB (NoSQL), BigQuery (Analytics)
-
-### **Security & Monitoring**
-- **Security Tools**: GitLeaks, Semgrep, Trivy, Checkov, Falco
-- **Monitoring**: Prometheus + Grafana + AlertManager
-- **Observability**: Custom dashboards, SLI/SLO tracking
-- **Compliance**: SOC 2 ready, audit trails, policy as code
-
----
-
-## 🚀 **Quick Start**
-
-### **Prerequisites**
-```bash
-terraform >= 1.5.0
-kubectl >= 1.28.0
-aws-cli >= 2.0
-docker >= 24.0
-```
-
-### **Deploy Infrastructure**
-```bash
-git clone https://github.com/abdihakim-said/cloudmart-enterprise-devsecops.git
-cd cloudmart-enterprise-devsecops
-
-# Configure AWS credentials
-aws configure
-
-# Deploy infrastructure
-cd terraform/
-terraform init
-terraform apply
-
-# Configure Kubernetes
-aws eks update-kubeconfig --region us-east-1 --name cloudmart-cluster
-
-# Deploy applications
-kubectl apply -f k8s/app/
-kubectl apply -f k8s/observability/
-```
-
----
-
-## 📊 **Performance & Security Metrics**
-
-### **Production Performance**
-- **Response Time**: <200ms (95th percentile)
-- **Uptime**: 99.9% SLA achieved
-- **Concurrent Users**: 1,000+ supported
-- **Auto-scaling**: Dynamic based on CPU/memory
-
-### **Security Posture**
-- **Vulnerability Scans**: 100% automated
-- **Container Security**: Distroless images, non-root users
-- **Network Security**: VPC, security groups, network policies
-- **Data Protection**: Encryption at rest and in transit
-
----
-
-## 🎯 **Production Evidence**
-
-### **AWS Infrastructure Health**
-![AWS Load Balancer](./screenshots/aws-healthy-targets.png)
-*All load balancer targets healthy and serving production traffic*
-
-### **Real-Time Analytics Pipeline**
-![BigQuery Analytics](./screenshots/bigquery-data.png)
-*Orders flowing from DynamoDB to BigQuery for business intelligence*
-
-### **DevSecOps Security Pipeline**
-![Security Pipeline](./screenshots/security-pipeline.png)
-*130+ automated security checks passing in CI/CD pipeline*
-
-### **Multi-Cloud AI Integration**
-![Azure AI Services](./screenshots/azure-ai-dashboard.png)
-*Azure Text Analytics processing customer sentiment in real-time*
-
----
-
-## 🎖️ **Enterprise Features**
-
-### **✅ Production-Ready Capabilities**
-- **Multi-Cloud Architecture** - AWS, Azure, GCP integration
-- **AI-Powered Automation** - 90% automated customer support
-- **DevSecOps Pipeline** - Comprehensive security scanning
-- **Real-time Monitoring** - Prometheus + Grafana observability
-- **Auto-scaling** - Dynamic resource allocation
-- **High Availability** - 99.9% uptime SLA
-
-### **✅ Security & Compliance**
-- **Zero Critical Vulnerabilities** - Continuous security scanning
-- **Runtime Protection** - Falco security monitoring
-- **Secrets Management** - AWS Secrets Manager + Kubernetes secrets
-- **Network Security** - VPC, security groups, network policies
-- **Audit Logging** - Comprehensive activity tracking
-
----
-
-## 📁 **Project Structure**
-
-```
-cloudmart-enterprise-devsecops/
-├── 📄 README.md                    # This file
-├── 📄 CHALLENGE-*.md               # Technical challenges documentation
-├── 📁 terraform/                   # Infrastructure as Code
-├── 📁 k8s/                         # Kubernetes manifests
-├── 📁 frontend/                    # React application
-├── 📁 backend/                     # Node.js API
-├── 📁 .github/workflows/           # CI/CD pipelines
-├── 📁 monitoring/                  # Grafana dashboards
-
-```
-
----
-
-## 🎯 **Business Impact**
-
-### **Cost Optimization**
-- **Infrastructure Costs**: Optimized resource allocation
-- **Operational Efficiency**: 90% automation of support tasks
-- **Scalability**: Pay-as-you-scale model
-- **Multi-cloud**: Vendor independence and cost optimization
-
-### **Security & Compliance**
-- **Zero Critical Vulnerabilities**: Comprehensive scanning
-- **SOC 2 Ready**: Security controls implementation
-- **Audit Trail**: Complete activity logging
-- **Compliance**: GDPR and data privacy considerations
-
----
-
-## 📞 **Contact**
-
-<div align="center">
-  <a href="https://linkedin.com/in/said-devops">
-    <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
-  </a>
-  <a href="mailto:abdihakimsaid1@gmail.com">
-    <img src="https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white" alt="Email"/>
-  </a>
-</div>
-
----
-
-<div align="center">
-  <h3>🌟 Production-Ready • Multi-Cloud • AI-Powered • Enterprise-Grade 🌟</h3>
-  <p><em>Demonstrating senior-level DevOps/SRE expertise with real business impact</em></p>
-  
-  **Live Environment**: Fully functional with real-time monitoring  
-  **DevSecOps Pipeline**: Automated security scanning and deployment  
-  **Multi-Cloud Integration**: AWS + Azure + GCP working together
-</div>
-
-
-## 🚀 **Quick Start**
-
-### **Prerequisites**
-```bash
-terraform >= 1.5.0
-kubectl >= 1.28.0
-aws-cli >= 2.0
-docker >= 24.0
-```
-
-### **Deploy Infrastructure**
-```bash
-git clone https://github.com/abdihakim-said/cloudmart-enterprise-devsecops.git
-cd cloudmart-enterprise-devsecops
-
-# Configure AWS credentials
-aws configure
-
-# Deploy infrastructure
-cd terraform/
-terraform init
-terraform apply
-
-# Configure Kubernetes
-aws eks update-kubeconfig --region us-east-1 --name cloudmart-cluster
-
-# Deploy applications
-kubectl apply -f k8s/app/
-kubectl apply -f k8s/observability/
-```
-
----
-
-## 📊 **Performance & Security Metrics**
-
-### **Production Performance**
-- **Response Time**: <200ms (95th percentile)
-- **Uptime**: 99.9% SLA achieved
-- **Concurrent Users**: 1,000+ supported
-- **Auto-scaling**: Dynamic based on CPU/memory
-
-### **Security Posture**
-- **Vulnerability Scans**: 100% automated
-- **Container Security**: Distroless images, non-root users
-- **Network Security**: VPC, security groups, network policies
-- **Data Protection**: Encryption at rest and in transit
-
----
-
-## 🎯 **Production Evidence**
-
-### **AWS Infrastructure Health**
-![AWS Load Balancer](./screenshots/aws-healthy-targets.png)
-*All load balancer targets healthy and serving production traffic*
-
-### **Real-Time Analytics Pipeline**
-![BigQuery Analytics](./screenshots/bigquery-data.png)
-*Orders flowing from DynamoDB to BigQuery for business intelligence*
-
-### **DevSecOps Security Pipeline**
-![Security Pipeline](./screenshots/security-pipeline.png)
-*130+ automated security checks passing in CI/CD pipeline*
-
-### **Multi-Cloud AI Integration**
-![Azure AI Services](./screenshots/azure-ai-dashboard.png)
-*Azure Text Analytics processing customer sentiment in real-time*
-
----
-
-## 🎖️ **Enterprise Features**
-
-### **✅ Production-Ready Capabilities**
-- **Multi-Cloud Architecture** - AWS, Azure, GCP integration
-- **AI-Powered Automation** - 90% automated customer support
-- **DevSecOps Pipeline** - Comprehensive security scanning
-- **Real-time Monitoring** - Prometheus + Grafana observability
-- **Auto-scaling** - Dynamic resource allocation
-- **High Availability** - 99.9% uptime SLA
-
-### **✅ Security & Compliance**
-- **Zero Critical Vulnerabilities** - Continuous security scanning
-- **Runtime Protection** - Falco security monitoring
-- **Secrets Management** - AWS Secrets Manager + Kubernetes secrets
-- **Network Security** - VPC, security groups, network policies
-- **Audit Logging** - Comprehensive activity tracking
-
----
-
-## 📁 **Project Structure**
-
-```
-cloudmart-enterprise-devsecops/
-├── 📄 README.md                    # This file
-├── 📄 CHALLENGE-*.md               # Technical challenges documentation
-├── 📁 terraform/                   # Infrastructure as Code
-├── 📁 k8s/                         # Kubernetes manifests
-├── 📁 frontend/                    # React application
-├── 📁 backend/                     # Node.js API
-├── 📁 .github/workflows/           # CI/CD pipelines
-├── 📁 monitoring/                  # Grafana dashboards
-└── 📁 docs/                        # Technical documentation
-```
-
----
-
-## 🎯 **Business Impact**
-
-### **Cost Optimization**
-- **Infrastructure Costs**: Optimized resource allocation
-- **Operational Efficiency**: 90% automation of support tasks
-- **Scalability**: Pay-as-you-scale model
-- **Multi-cloud**: Vendor independence and cost optimization
-
-### **Security & Compliance**
-- **Zero Critical Vulnerabilities**: Comprehensive scanning
-- **SOC 2 Ready**: Security controls implementation
-- **Audit Trail**: Complete activity logging
-- **Compliance**: GDPR and data privacy considerations
-
----
-
-## 📞 **Contact**
-
-<div align="center">
-  <a href="https://linkedin.com/in/said-devops">
-    <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
-  </a>
-  <a href="mailto:abdihakimsaid1@gmail.com">
-    <img src="https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white" alt="Email"/>
-  </a>
-</div>
-
----
-
-<div align="center">
-  <h3>🌟 Production-Ready • Multi-Cloud • AI-Powered • Enterprise-Grade 🌟</h3>
-  <p><em>Demonstrating senior-level DevOps/SRE expertise with real business impact</em></p>
-  
-  **Live Environment**: Fully functional with real-time monitoring  
-  **DevSecOps Pipeline**: Automated security scanning and deployment  
-  **Multi-Cloud Integration**: AWS + Azure + GCP working together
-</div>
+**Abdihakim Said**, AWS Solutions Architect · CKA. I build secure delivery pipelines and Kubernetes platforms on AWS. Contact details are on my [GitHub profile](https://github.com/abdihakim-said).

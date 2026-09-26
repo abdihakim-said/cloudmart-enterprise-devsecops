@@ -274,12 +274,12 @@ resource "aws_iam_role" "ebs_csi_driver" {
         Action = "sts:AssumeRoleWithWebIdentity"
         Effect = "Allow"
         Principal = {
-          Federated = "arn:aws:iam::682881510910:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/D89C486329ACF0F14CFFE56C5E18134D"
+          Federated = aws_iam_openid_connect_provider.eks.arn
         }
         Condition = {
           StringEquals = {
-            "oidc.eks.us-east-1.amazonaws.com/id/D89C486329ACF0F14CFFE56C5E18134D:sub" = "system:serviceaccount:kube-system:ebs-csi-controller-sa"
-            "oidc.eks.us-east-1.amazonaws.com/id/D89C486329ACF0F14CFFE56C5E18134D:aud" = "sts.amazonaws.com"
+            "${replace(aws_iam_openid_connect_provider.eks.url, "https://", "")}:sub" = "system:serviceaccount:kube-system:ebs-csi-controller-sa"
+            "${replace(aws_iam_openid_connect_provider.eks.url, "https://", "")}:aud" = "sts.amazonaws.com"
           }
         }
       }

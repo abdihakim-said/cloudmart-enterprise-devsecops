@@ -135,7 +135,7 @@ metadata:
   name: cloudmart-backend-sa
   namespace: default
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::682881510910:role/cloudmart-eks-pod-role
+    eks.amazonaws.com/role-arn: arn:aws:iam::<AWS_ACCOUNT_ID>:role/cloudmart-eks-pod-role
 ---
 apiVersion: v1
 kind: ConfigMap

@@ -6,7 +6,7 @@ metadata:
       includeSubDomains; preload","X-Content-Type-Options":"nosniff","X-Frame-Options":"DENY","X-XSS-Protection":"1;
       mode=block","Referrer-Policy":"strict-origin-when-cross-origin"}}'
     alb.ingress.kubernetes.io/actions.ssl-redirect: '{"Type":"redirect","RedirectConfig":{"Protocol":"HTTPS","Port":"443","StatusCode":"HTTP_301"}}'
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:682881510910:certificate/ad92019b-22d3-4bde-abf1-2909a68d9c4e
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:<AWS_ACCOUNT_ID>:certificate/ad92019b-22d3-4bde-abf1-2909a68d9c4e
     alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
     alb.ingress.kubernetes.io/healthcheck-path: /
     alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
@@ -28,7 +28,7 @@ metadata:
       Security=Enhanced
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/unhealthy-threshold-count: "3"
-    alb.ingress.kubernetes.io/wafv2-acl-arn: arn:aws:wafv2:us-east-1:682881510910:regional/webacl/cloudmart-production-waf/702bcc26-61ac-44ea-b135-ffa338575a14
+    alb.ingress.kubernetes.io/wafv2-acl-arn: arn:aws:wafv2:us-east-1:<AWS_ACCOUNT_ID>:regional/webacl/cloudmart-production-waf/702bcc26-61ac-44ea-b135-ffa338575a14
     kubernetes.io/ingress.class: alb
   name: cloudmart-production-ingress
   namespace: default
