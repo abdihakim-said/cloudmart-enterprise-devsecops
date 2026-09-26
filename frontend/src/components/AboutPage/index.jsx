@@ -10,8 +10,8 @@ const AboutPage = () => {
         <h1 className="text-3xl font-bold mb-6">CloudMart - Enterprise Multi-Cloud DevSecOps Platform</h1>
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="mb-6">
-            <h2 className="text-xl font-semibold text-blue-600 mb-2">Production E-commerce Platform | 2024</h2>
-            <p className="text-gray-600">Live Production Environment: <a href="https://app.cloudmartsaid.shop" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">https://app.cloudmartsaid.shop</a></p>
+            <h2 className="text-xl font-semibold text-blue-600 mb-2">Portfolio E-commerce Build | 2025</h2>
+            <p className="text-gray-600">Demo environment (decommissioned): <a href="https://app.cloudmartsaid.shop" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">https://app.cloudmartsaid.shop</a></p>
           </div>
 
           <h2 className="text-2xl font-semibold mb-4">OVERVIEW</h2>
@@ -64,10 +64,10 @@ const AboutPage = () => {
 
           <h2 className="text-2xl font-semibold mb-4">🏆 KEY ACHIEVEMENTS</h2>
           <ul className="list-disc list-inside mb-6 space-y-2">
-            <li><strong>99.9% uptime SLA</strong> with zero-downtime deployments</li>
-            <li><strong>95%+ CI/CD pipeline success rate</strong> (industry leading)</li>
+            <li><strong>Rolling deployments</strong> to EKS from the CI/CD pipeline</li>
+            <li><strong>Security gate</strong> that blocks the build on leaked secrets and critical CVEs</li>
             <li><strong>Sub-200ms API response times</strong> at scale</li>
-            <li><strong>100% automated security vulnerability scanning</strong></li>
+            <li><strong>7 security scanners</strong> in every pipeline run</li>
             <li><strong>Multiple daily deployments</strong> with automated rollback</li>
           </ul>
 
@@ -100,7 +100,7 @@ const AboutPage = () => {
 
           <h2 className="text-2xl font-semibold mb-4">💼 BUSINESS IMPACT</h2>
           <ul className="list-disc list-inside mb-6 space-y-2">
-            <li><strong>90% automation</strong> of customer support through AI chatbot</li>
+            <li><strong>AI support assistant</strong> with sentiment analysis on tickets</li>
             <li><strong>Cost optimization</strong> through intelligent auto-scaling</li>
             <li><strong>Enhanced security posture</strong> with zero critical vulnerabilities</li>
             <li><strong>Improved developer productivity</strong> with streamlined CI/CD</li>
@@ -122,7 +122,7 @@ const AboutPage = () => {
             <div className="bg-green-50 p-4 rounded-lg text-center">
               <div className="text-2xl font-bold text-green-600 mb-2">🚀</div>
               <div className="font-semibold mb-1">Fast & Reliable</div>
-              <div className="text-sm text-gray-600">Sub-200ms response times with 99.9% uptime</div>
+              <div className="text-sm text-gray-600">Latency and error rates tracked in Prometheus and Grafana</div>
             </div>
             <div className="bg-blue-50 p-4 rounded-lg text-center">
               <div className="text-2xl font-bold text-blue-600 mb-2">🤖</div>
