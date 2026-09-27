@@ -18,7 +18,7 @@ export const startOpenAIConversationController = async (req, res) => {
 
 export const sendOpenAIMessageController = async (req, res) => {
   try {
-    const { threadId, message } = req.body;
+    const { threadId, message, userEmail } = req.body;
     if (!threadId || !message) {
       return res
         .status(400)
@@ -26,7 +26,7 @@ export const sendOpenAIMessageController = async (req, res) => {
     }
     
     const result = await trackAIRequest('openai', 'gpt-4', 'send_message', async () => {
-      return await aiService.sendOpenAIMessage(threadId, message);
+      return await aiService.sendOpenAIMessage(threadId, message, userEmail);
     });
     
     res.json({ response: result });

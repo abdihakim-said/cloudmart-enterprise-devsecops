@@ -14,7 +14,8 @@ import { v4 as uuidv4 } from "uuid";
 const { EventStreamCodec } = pkg;
 
 import dotenv from "dotenv";
-import { deleteOrder, getOrderById, cancelOrder } from "./orderService.js";
+import { getOrderById, cancelOrder } from "./orderService.js";
+import { cancelOrderTool, executeOrderTool } from "./orderTools.js";
 
 dotenv.config();
 const bedrockAgentClient = new BedrockAgentRuntimeClient({
@@ -29,36 +30,6 @@ const ASSISTANT_ID = process.env.OPENAI_ASSISTANT_ID;
 const AGENT_ID = process.env.BEDROCK_AGENT_ID;
 const AGENT_ALIAS_ID = process.env.BEDROCK_AGENT_ALIAS_ID;
 
-const deleteOrderFunction = {
-  name: "delete_order",
-  description: "Delete an order by order ID",
-  parameters: {
-    type: "object",
-    properties: {
-      orderId: {
-        type: "string",
-        description: "The ID of the order to be deleted",
-      },
-    },
-    required: ["orderId"],
-  },
-};
-
-const cancelOrderFunction = {
-  name: "cancel_order",
-  description: "Cancel an order by changing its status to 'canceled'",
-  parameters: {
-    type: "object",
-    properties: {
-      orderId: {
-        type: "string",
-        description: "The ID of the order to be canceled",
-      },
-    },
-    required: ["orderId"],
-  },
-};
-
 // OpenAI Functions
 
 export const createOpenAIConversation = async () => {
@@ -66,7 +37,9 @@ export const createOpenAIConversation = async () => {
   return thread.id;
 };
 
-export const sendOpenAIMessage = async (threadId, message) => {
+// customerEmail identifies whose orders the assistant may act on. It comes from
+// the caller, never from the model.
+export const sendOpenAIMessage = async (threadId, message, customerEmail) => {
   await openai.beta.threads.messages.create(threadId, {
     role: "user",
     content: message,
@@ -74,10 +47,7 @@ export const sendOpenAIMessage = async (threadId, message) => {
 
   const run = await openai.beta.threads.runs.create(threadId, {
     assistant_id: ASSISTANT_ID,
-    tools: [
-      { type: "function", function: deleteOrderFunction },
-      { type: "function", function: cancelOrderFunction },
-    ],
+    tools: [{ type: "function", function: cancelOrderTool }],
   });
 
   let runStatus;
@@ -91,23 +61,17 @@ export const sendOpenAIMessage = async (threadId, message) => {
       const toolOutputs = [];
 
       for (const toolCall of toolCalls) {
-        const { orderId } = JSON.parse(toolCall.function.arguments);
         let result;
-
         try {
-          const order = await getOrderById(orderId);
-          if (!order) {
-            result = `Order with ID ${orderId} does not exist.`;
-          } else if (toolCall.function.name === "delete_order") {
-            await deleteOrder(orderId);
-            result = `Order ${orderId} has been successfully deleted.`;
-          } else if (toolCall.function.name === "cancel_order") {
-            const updatedOrder = await cancelOrder(orderId);
-            result = `Order ${orderId} has been successfully canceled. New status: ${updatedOrder.status}`;
-          }
+          result = await executeOrderTool(
+            toolCall.function.name,
+            toolCall.function.arguments,
+            customerEmail,
+            { getOrderById, cancelOrder }
+          );
         } catch (error) {
-          console.error('Error processing order:', orderId, error);
-          result = `An error occurred while processing the order: ${error.message}`;
+          console.error("Error running tool:", toolCall.function.name, error);
+          result = "Something went wrong while updating the order.";
         }
 
         toolOutputs.push({

@@ -63,8 +63,23 @@ flowchart LR
 
 The application code came from the challenge and was built as a demo, so it has no real user security. I'm listing it plainly because these are exactly the problems I'd look for in a client's system.
 
+**Fixed since the first deploy**
+
+- **The AI assistant can no longer delete orders, or touch anyone else's.** Originally the assistant exposed a `delete_order` tool to OpenAI with no ownership check, so a chat message could delete someone else's order. Now:
+  - The model is offered one tool, `cancel_order`. Cancelling is a reversible status change.
+  - Every tool call goes through `backend/src/services/orderTools.js` before anything happens. It rejects unknown tools, including `delete_order`, and malformed order IDs.
+  - It only acts on orders owned by the customer on the conversation. That email is passed in by the caller, never taken from the model.
+  - It only cancels orders that are still `pending` or `processing`.
+  - "Not found" and "not yours" return the same answer, so the tool can't be used to discover which order IDs exist.
+  - `orderTools.test.js` covers all of this (`npm test`, Node's built-in runner).
+
+  *LLMs can draft; deterministic controls decide.*
+
+  One caveat: the customer's email is only as trustworthy as the caller until the API has real authentication (see the next item). With a JWT, it would come from the token's claims instead of the request body.
+
+**Still open**
+
 - **The API has no authentication.** Anyone can list all orders, and create, edit or delete products, orders and tickets. The `/admin` page is open. Next: Cognito (or another OIDC provider) with JWT checks on every route, and role-based access for admin.
-- **The AI assistant can delete any order.** It exposes a `delete_order` tool to OpenAI with no check on who owns the order, so a chat message can delete someone else's order: a prompt-injection risk. Next: remove destructive tools from the model, or require the tool to act only on the authenticated user's own orders with a confirmation step. *LLMs can draft; deterministic controls decide.*
 - **The pod IAM role is too broad.** IRSA is used correctly, but the role attaches `AmazonDynamoDBFullAccess`, `SecretsManagerReadWrite` and `AmazonBedrockFullAccess`. Next: a custom policy limited to the three tables, one secret path and one Bedrock agent.
 - **The infrastructure pipeline's CodeBuild role has `Action: *` on `Resource: *`.** Next: a scoped deploy role with a permissions boundary.
 - **The IaC scan gate barely gates.** About 50 Checkov checks are skipped for the demo, both Checkov and tfsec run in soft-fail mode in GitHub Actions, and the CodeBuild gate filters on a severity field that open-source Checkov leaves empty without a platform API key. Next: fail on specific check IDs instead of severity.

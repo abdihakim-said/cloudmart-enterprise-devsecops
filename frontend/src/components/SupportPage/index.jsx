@@ -3,6 +3,7 @@ import { Send, Plus, Trash2 } from "lucide-react";
 import Header from "../Header";
 import Footer from "../Footer";
 import api from "../../config/axiosConfig";
+import { getUser } from "../../utils/userUtils";
 
 const TypingIndicator = () => (
   <div className="inline-flex items-center space-x-1 bg-gray-200 rounded-lg px-3 py-3">
@@ -174,6 +175,7 @@ const CustomerSupportPage = () => {
       const response = await api.post("/ai/message", {
         threadId: currentThreadId,
         message: inputMessage,
+        userEmail: getUser()?.email,
       });
 
       setIsTyping(false);
