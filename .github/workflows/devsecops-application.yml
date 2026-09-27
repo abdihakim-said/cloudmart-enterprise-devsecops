@@ -264,23 +264,17 @@ jobs:
           **Branch**: ${{ github.ref_name }}
           **Timestamp**: $(date -u)
           
-          ## Security Validations ✅
+          ## Scans run
           
-          - ✅ GitLeaks: Secrets detection completed
-          - ✅ Semgrep: SAST scanning completed  
-          - ✅ Trivy: Container vulnerability scanning
-          - ✅ npm audit: Dependency vulnerability checks
-          - ✅ Image scanning: Post-build security validation
+          - GitLeaks (secrets), Semgrep (SAST), npm audit (dependencies), Trivy (filesystem + images)
+          - Note: the Trivy image scans in this workflow are report-only (they do not fail the build).
           
-          ## Deployment Status
+          ## Job results
           - Security Scan: ${{ needs.security-scan.result }}
           - Build & Test: ${{ needs.build-and-test.result }}
           - Deploy: ${{ needs.deploy.result }}
           
-          ## Compliance Status: COMPLIANT ✅
-          - Zero critical vulnerabilities allowed
-          - All security gates passed
-          - Production deployment secured
+          Report generated from the pipeline run above. See the scanner artifacts for actual findings; this summary does not certify compliance with any framework.
           EOF
           
           echo "📊 Compliance report generated"

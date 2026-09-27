@@ -295,8 +295,8 @@ class SecurityReportGenerator:
     </div>
     
     <div class="section">
-        <h2>Compliance Status</h2>
-        <p>This report covers security assessments aligned with:</p>
+        <h2>Reference Frameworks</h2>
+        <p>Findings can be mapped to these frameworks. This report is not a compliance certification:</p>
         <ul>
             <li>OWASP Top 10 2021</li>
             <li>NIST Cybersecurity Framework</li>

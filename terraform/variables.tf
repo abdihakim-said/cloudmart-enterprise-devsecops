@@ -62,7 +62,7 @@ variable "bigquery_location" {
 variable "google_project_id" {
   description = "Google Cloud Project ID for BigQuery"
   type        = string
-  default     = "optical-aviary-446420-i1"
+  default     = ""
 }
 
 variable "bigquery_dataset" {

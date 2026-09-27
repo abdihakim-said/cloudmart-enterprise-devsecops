@@ -269,36 +269,14 @@ jobs:
           **Branch**: ${{ github.ref_name }}
           **Timestamp**: $(date -u)
           
-          ## Security Validations Completed ✅
+          ## Scans run
+          - terraform validate, Checkov, tfsec, GitLeaks
+          - Note: Checkov and tfsec run in soft-fail mode here (findings are reported, not blocking).
           
-          ### Static Analysis Security Testing (SAST)
-          - ✅ Terraform validation passed
-          - ✅ Checkov security scanning completed
-          - ✅ tfsec vulnerability scanning completed
-          - ✅ GitLeaks secrets detection completed
-          
-          ### Infrastructure Security
-          - ✅ IAM policies follow least-privilege principle
-          - ✅ Encryption at rest enabled for all data stores
-          - ✅ Network security groups properly configured
-          - ✅ VPC security best practices implemented
-          
-          ### Compliance Status
-          - ✅ SOC 2 Type II controls implemented
-          - ✅ NIST Cybersecurity Framework alignment
-          - ✅ Security audit trail maintained
-          - ✅ Change management process followed
-          
-          ## Pipeline Results
+          ## Job results
           - Validation & Security: ${{ needs.validate-and-security.result }}
           
-          ## Security Metrics
-          - **Critical Vulnerabilities**: 0
-          - **High Severity Issues**: 0
-          - **Security Scan Coverage**: 100%
-          - **Compliance Score**: 100%
-          
-          ## Compliance Status: COMPLIANT ✅
+          Report generated from the pipeline run above. See the scanner artifacts for actual findings; this summary does not certify compliance with any framework.
           EOF
           
           echo "📊 Infrastructure security report generated"

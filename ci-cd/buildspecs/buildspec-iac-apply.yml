@@ -122,8 +122,7 @@ phases:
         
         **Applied at:** $(date)
         **Environment:** $TF_VAR_environment
-        **Security Status:** VALIDATED
-        **Compliance:** SOC2/NIST Ready
+        **Note:** summary of this run only; it does not certify compliance with any framework.
         
         ## Security Validations Completed
         - ✅ Pre-apply security scanning (Checkov)
@@ -137,16 +136,7 @@ phases:
         $(terraform state list | grep -E "(iam|security|kms|secret)" | head -10)
         \`\`\`
         
-        ## Security Metrics
-        - Zero critical security violations
-        - Encrypted state management
-        - Least-privilege IAM policies
-        - Security monitoring enabled
-        
-        ## Compliance Status
-        - ✅ SOC 2 controls implemented
-        - ✅ NIST framework alignment
-        - ✅ Security audit trail maintained
+        See the Checkov output in this build's logs for actual findings.
         EOF
 
   post_build:

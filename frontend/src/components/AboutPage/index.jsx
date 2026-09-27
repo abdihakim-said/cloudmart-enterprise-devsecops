@@ -91,11 +91,10 @@ const AboutPage = () => {
 
           <h2 className="text-2xl font-semibold mb-4">🔒 SECURITY & COMPLIANCE</h2>
           <ul className="list-disc list-inside mb-6 space-y-2">
-            <li><strong>Runtime security monitoring</strong> with Falco</li>
+            <li><strong>Falco runtime detection rules</strong></li>
             <li><strong>Pod Security Standards</strong> and network policies</li>
             <li><strong>Secrets management</strong> with AWS Secrets Manager</li>
             <li><strong>TLS 1.3 encryption</strong> with trusted CA certificates</li>
-            <li><strong>SOC 2 compliance framework</strong> implementation</li>
           </ul>
 
           <h2 className="text-2xl font-semibold mb-4">💼 BUSINESS IMPACT</h2>

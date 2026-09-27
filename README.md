@@ -51,20 +51,32 @@ flowchart LR
 
 ## 3. Key decisions and trade-offs
 
-- **The security gate is code, not a checklist.** `buildspec-security.yml` runs 7 scanners: gitleaks, Semgrep, Bandit, npm audit/retire.js, Safety, Checkov and Trivy. A Python step then parses their JSON output and fails the build on leaked secrets, Semgrep errors, CRITICAL image CVEs or HIGH Checkov findings. Bandit, npm audit and Safety are report-only, which keeps the gate focused on findings that need a human now.
-- **Pods get AWS access through IRSA, not node roles.** The backend's service account assumes a scoped role for DynamoDB, Secrets Manager and Bedrock. Third-party API keys live in Secrets Manager.
+- **The security gate is code, not a checklist.** In the CodePipeline path, `buildspec-security.yml` runs 7 scanners: gitleaks, Semgrep, Bandit, npm audit/retire.js, Safety, Checkov and Trivy. A Python step parses their JSON and fails the build on leaked secrets, Semgrep errors or CRITICAL image CVEs. Bandit, npm audit and Safety are report-only. (The GitHub Actions path runs similar scans, but its image scans only report.)
+- **Pods get AWS access through IRSA, not node roles.** The backend's service account assumes its own IAM role, and third-party API keys live in Secrets Manager. (The role itself is too broad; see limitations.)
 - **EKS hardening basics:** secrets are envelope-encrypted with a KMS key, all five control-plane log types are enabled, the private endpoint is on, and the EBS CSI driver runs with its own IRSA role.
 - **Edge:** ALB with an ACM certificate and a WAF web ACL in front of the frontend.
+- **Infrastructure changes need a human.** The Terraform CodePipeline runs validate → plan (with an Infracost cost estimate) → **manual approval** → apply → notify, with the state backed up to S3 before each apply.
 - **Event-driven analytics instead of querying the app database.** A DynamoDB stream triggers a Lambda that writes orders to BigQuery, so analytics never touches the transactional table.
 - **AI calls are instrumented like any dependency.** Request count, latency and estimated cost per AI provider are exported as Prometheus metrics and graphed in Grafana.
 
 ## 4. Known limitations / what I'd do next
+
+The application code came from the challenge and was built as a demo, so it has no real user security. I'm listing it plainly because these are exactly the problems I'd look for in a client's system.
+
+- **The API has no authentication.** Anyone can list all orders, and create, edit or delete products, orders and tickets. The `/admin` page is open. Next: Cognito (or another OIDC provider) with JWT checks on every route, and role-based access for admin.
+- **The AI assistant can delete any order.** It exposes a `delete_order` tool to OpenAI with no check on who owns the order, so a chat message can delete someone else's order: a prompt-injection risk. Next: remove destructive tools from the model, or require the tool to act only on the authenticated user's own orders with a confirmation step. *LLMs can draft; deterministic controls decide.*
+- **The pod IAM role is too broad.** IRSA is used correctly, but the role attaches `AmazonDynamoDBFullAccess`, `SecretsManagerReadWrite` and `AmazonBedrockFullAccess`. Next: a custom policy limited to the three tables, one secret path and one Bedrock agent.
+- **The infrastructure pipeline's CodeBuild role has `Action: *` on `Resource: *`.** Next: a scoped deploy role with a permissions boundary.
+- **The IaC scan gate barely gates.** About 50 Checkov checks are skipped for the demo, both Checkov and tfsec run in soft-fail mode in GitHub Actions, and the CodeBuild gate filters on a severity field that open-source Checkov leaves empty without a platform API key. Next: fail on specific check IDs instead of severity.
 
 - **The EKS public endpoint is open** (`endpoint_public_access = true` with no CIDR restriction). Next: restrict it to CI/admin CIDRs, or use private-only access with a bastion/SSM.
 - **CI uses long-lived AWS access keys.** Next: GitHub OIDC with per-pipeline roles.
 - **Scanner installs pipe remote scripts from `main` into bash** (Trivy, gitleaks). Next: pin versions and verify checksums, since the pipeline is itself supply-chain surface.
 - **The EKS addon uses the deprecated `resolve_conflicts`**, and the cluster version (1.28) is out of standard support. Next: move to `resolve_conflicts_on_*` and upgrade.
 - **The security gate fails open.** If a scanner crashes and writes no report, the Python gate counts it as a pass. Next: treat a missing report as a failure.
+- **Prometheus and Grafana were exposed on the internet.** Prometheus ran with its admin API enabled, and the backend's service account could read every Secret in the cluster. Next: internal-only monitoring (or SSO in front), admin API off, and a namespaced Role limited to the secrets it needs.
+- **A long-lived GCP service-account key** is created by Terraform and stored in Secrets Manager for the BigQuery Lambda. Next: GCP Workload Identity Federation with AWS, so no key exists.
+- **A Grafana admin password was committed** in an early version (since removed from the code). Always create that secret out of band.
 - **Two NetworkPolicy files overlap** (`k8s/infrastructure/` and `security/k8s/`), and the PodSecurityPolicy manifest targets an API removed in Kubernetes 1.25. Next: consolidate, and move to Pod Security Admission.
 - **The Grafana/Prometheus stack runs as plain manifests.** Next: kube-prometheus-stack via Helm/ArgoCD for upgrades and HA.
 - **The last CI runs failed** (Sept 2025) after the infrastructure was removed; the earlier successful run is shown below.
@@ -73,7 +85,7 @@ flowchart LR
 
 | | |
 |---|---|
-| ![Pipeline](./screenshots/security-pipeline.png) | Application pipeline run #21: security scanning → build & test → deploy to EKS → compliance report, all green |
+| ![Pipeline](./screenshots/security-pipeline.png) | Application pipeline run #21: security scanning → build & test → deploy to EKS → summary report, all green |
 | ![Targets](./screenshots/aws-healthy-targets.png) | ALB target groups healthy |
 | ![BigQuery](./screenshots/bigquery-data.png) | Orders arriving in BigQuery through the DynamoDB stream → Lambda path |
 | ![Sentiment](./screenshots/support-sentiment.png) | Azure sentiment analysis on support tickets |
