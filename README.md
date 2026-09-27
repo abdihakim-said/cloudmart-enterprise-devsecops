@@ -97,4 +97,4 @@ kubectl apply -f k8s/infrastructure/ -f k8s/base/ -f k8s/observability/
 
 ---
 
-**Abdihakim Said**, AWS Solutions Architect · CKA. I build secure delivery pipelines and Kubernetes platforms on AWS. Contact details are on my [GitHub profile](https://github.com/abdihakim-said).
+**Abdihakim Said**, AWS Solutions Architect Associate · CKA. I build secure delivery pipelines and Kubernetes platforms on AWS. Contact details are on my [GitHub profile](https://github.com/abdihakim-said).
