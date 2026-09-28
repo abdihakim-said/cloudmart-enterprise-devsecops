@@ -2,7 +2,7 @@
 
 An e-commerce app on **Amazon EKS** with AI features from three clouds: an OpenAI assistant, an Amazon Bedrock agent, and Azure sentiment analysis on support tickets. Orders stream from DynamoDB to Google BigQuery for analytics. Everything is provisioned with Terraform and shipped through security-gated CI/CD.
 
-> **Portfolio build, decommissioned.** The application and base architecture come from the public **Multicloud DevOps & AI Challenge** (reference diagram below). I built and ran it in my own AWS, Azure and GCP accounts in August–September 2025, then extended it with the DevSecOps pipelines, security controls and observability described here. It was never used by real customers. The dashboard traffic came from a load-generator script, and the infrastructure has since been torn down.
+> The application and base architecture come from the public **Multicloud DevOps & AI Challenge** (reference diagram below). I extended it with the DevSecOps pipelines, security controls and observability described here. Dashboard traffic in the screenshots is synthetic, and the environment has since been decommissioned.
 
 ![CloudMart running at app.cloudmartsaid.shop](./screenshots/live-application.png)
 
