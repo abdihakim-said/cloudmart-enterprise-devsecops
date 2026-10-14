@@ -147,7 +147,7 @@ const AboutPage = () => {
             <p>
               <strong>Connect:</strong> 
               <a href="https://linkedin.com/in/said-devops" className="text-blue-600 hover:underline ml-2" target="_blank" rel="noopener noreferrer">LinkedIn</a> | 
-              <a href="mailto:abdihakimsaid1@gmail.com" className="text-blue-600 hover:underline ml-2">abdihakimsaid1@gmail.com</a>
+              <a href="mailto:abdihakim@humanlayer.uk" className="text-blue-600 hover:underline ml-2">abdihakim@humanlayer.uk</a>
             </p>
           </div>
         </div>
